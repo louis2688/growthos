@@ -42,3 +42,6 @@ next-env.d.ts
 
 # execution scratch (not part of the app)
 .superpowers/
+
+# mastra experiment sandbox (not part of the app)
+growthos-mastra/
