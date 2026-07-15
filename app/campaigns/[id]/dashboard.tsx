@@ -21,10 +21,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { Campaign, Channel, Todo, TodoPriority } from "@/lib/types";
 import { AddTodoDialog, EditTodoDialog } from "./todo-dialogs";
 
-const priorityVariant: Record<TodoPriority, "destructive" | "default" | "secondary"> = {
-  high: "destructive",
-  medium: "default",
-  low: "secondary",
+// Soft pills per design-system/MASTER.md (not solid badge variants)
+const priorityPill: Record<TodoPriority, string> = {
+  high: "border-transparent bg-destructive/10 text-destructive",
+  medium: "border-transparent bg-primary/10 text-primary",
+  low: "border-transparent bg-muted-foreground/15 text-muted-foreground",
 };
 
 export default function Dashboard({
@@ -57,14 +58,22 @@ export default function Dashboard({
         </Link>
       </div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold">{campaign.title}</h1>
           <p className="mt-1 text-muted-foreground">{campaign.goal}</p>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-2 w-44 overflow-hidden rounded-full bg-primary/10">
+              <span
+                className="block h-full rounded-full bg-gradient-to-r from-primary to-brand-pink"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {done}/{todos.length} done · {pct}%
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-sm">
-            {done}/{todos.length} done · {pct}%
-          </Badge>
           <AlertDialog>
             {/* Base UI: render prop replaces Radix asChild */}
             <AlertDialogTrigger
@@ -101,11 +110,12 @@ export default function Dashboard({
         </div>
       </div>
 
-      {regenError && <p className="mb-4 text-sm text-red-600">{regenError}</p>}
+      {regenError && <p className="mb-4 text-sm text-destructive">{regenError}</p>}
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         <Button
           size="sm"
+          className="rounded-full"
           variant={activeChannel === "all" ? "default" : "outline"}
           onClick={() => setActiveChannel("all")}
         >
@@ -115,6 +125,7 @@ export default function Dashboard({
           <Button
             key={c.id}
             size="sm"
+            className="rounded-full"
             variant={activeChannel === c.id ? "default" : "outline"}
             onClick={() => setActiveChannel(c.id)}
           >
@@ -131,7 +142,7 @@ export default function Dashboard({
         {visible.map((todo) => (
           <li
             key={todo.id}
-            className="flex items-start gap-3 rounded-lg border p-3"
+            className="glass flex items-start gap-3 rounded-xl border p-3.5 transition-colors hover:border-primary/40"
             data-status={todo.status}
           >
             <Checkbox
@@ -162,11 +173,15 @@ export default function Dashboard({
                 {activeChannel === "all" && (
                   <Badge variant="outline">{channelName.get(todo.channel_id)}</Badge>
                 )}
-                <Badge variant={priorityVariant[todo.priority]}>{todo.priority}</Badge>
+                <Badge className={priorityPill[todo.priority]}>{todo.priority}</Badge>
                 {todo.tool && <Badge variant="secondary">{todo.tool}</Badge>}
-                {todo.status === "in_progress" && <Badge>in progress</Badge>}
+                {todo.status === "in_progress" && (
+                  <Badge className="border-transparent bg-emerald-600/10 text-emerald-600 dark:text-emerald-400">
+                    in progress
+                  </Badge>
+                )}
                 {todo.due_date && (
-                  <span className="text-muted-foreground">due {todo.due_date}</span>
+                  <span className="tabular-nums text-muted-foreground">due {todo.due_date}</span>
                 )}
               </div>
             </div>

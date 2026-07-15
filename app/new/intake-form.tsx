@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { createCampaign } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,15 @@ export default function IntakeForm() {
   const [state, formAction, pending] = useActionState(createCampaign, null);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <Card>
+    <main className="mx-auto w-full max-w-2xl px-4 py-12">
+      <div className="mb-2">
+        <Link href="/" className="text-sm text-muted-foreground hover:underline">
+          ← All campaigns
+        </Link>
+      </div>
+      <Card className="glass rounded-2xl shadow-lg shadow-primary/5">
         <CardHeader>
-          <CardTitle>New campaign</CardTitle>
+          <CardTitle className="font-heading text-2xl">New campaign</CardTitle>
           <CardDescription>
             Tell the AI about your product and goal — it will build the campaign.
           </CardDescription>

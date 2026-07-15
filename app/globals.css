@@ -7,9 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: ui-monospace, monospace;
+  --font-heading: var(--font-space-grotesk);
+  --color-brand-pink: var(--brand-pink);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,24 +50,26 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* GrowthOS design system — see design-system/MASTER.md */
+  --background: #faf5ff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #ede9fe;
+  --secondary-foreground: #5b21b6;
+  --muted: #f7f3fd;
+  --muted-foreground: #5b5772;
+  --accent: #f3e8ff;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --border: #efe7fc;
+  --input: #e6dcf8;
+  --ring: #7c3aed;
+  --brand-pink: #ec4899;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -84,24 +87,25 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #12101c;
+  --foreground: #f3f0fb;
+  --card: #201a38;
+  --card-foreground: #f3f0fb;
+  --popover: #201a38;
+  --popover-foreground: #f3f0fb;
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --secondary: #2a2350;
+  --secondary-foreground: #d6c9f8;
+  --muted: #1a1530;
+  --muted-foreground: #a79fc4;
+  --accent: #2a2350;
+  --accent-foreground: #f3f0fb;
+  --destructive: #f87171;
+  --border: rgba(167, 139, 250, 0.18);
+  --input: rgba(167, 139, 250, 0.24);
+  --ring: #8b5cf6;
+  --brand-pink: #f472b6;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -123,8 +127,31 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(60rem 40rem at 8% -10%, #ede4ff, transparent 60%),
+      radial-gradient(50rem 36rem at 105% 15%, #ffe4f3, transparent 55%),
+      radial-gradient(46rem 40rem at 50% 115%, #e4e9ff, transparent 55%);
+    background-attachment: fixed;
+  }
+  .dark body {
+    background-image: radial-gradient(60rem 40rem at 8% -10%, #241b45, transparent 60%),
+      radial-gradient(50rem 36rem at 105% 15%, #3b1230, transparent 55%),
+      radial-gradient(46rem 40rem at 50% 115%, #14204a, transparent 55%);
   }
   html {
     @apply font-sans;
   }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-space-grotesk), var(--font-dm-sans), sans-serif;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+}
+
+@utility glass {
+  background-color: color-mix(in srgb, var(--card) 75%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
