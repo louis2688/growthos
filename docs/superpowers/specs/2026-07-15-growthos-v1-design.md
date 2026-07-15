@@ -72,7 +72,7 @@ One server route: `POST /api/campaigns/generate`
 1. Receives intake fields.
 2. Calls Claude with a prompt that includes the intake and the curated channel list, requesting structured JSON: `{ title, channels: [3–5 names], todos: [15–30 of { title, description, channel, priority, tool, due_in_days? }] }`. `due_in_days` is converted to a concrete `due_date` (creation date + N days) at insert time.
 3. Validates the response with a Zod schema.
-4. Inserts campaign, channels, todos into Supabase in one transaction.
+4. Inserts campaign, channels, todos into Supabase — campaign row first, then children; if any child insert fails the campaign row is deleted (cascade removes children), so no partial campaign is ever visible.
 5. Returns the campaign id; client redirects to the dashboard.
 
 **Curated channel list (~12):** TikTok, Reddit, SEO, App Store, Product Hunt, LinkedIn, X (Twitter), YouTube, Email, Influencers, Google Ads, Facebook Ads. The AI must choose from this list so the UI stays predictable.
@@ -80,7 +80,7 @@ One server route: `POST /api/campaigns/generate`
 ## Error handling
 
 - Malformed/invalid AI JSON → retry once; on second failure show a friendly error and preserve the intake form values.
-- Supabase insert failure → no partial campaigns (transactional insert); surface error to the user.
+- Supabase insert failure → no partial campaigns (cleanup-on-failure: delete the campaign row, cascade removes children); surface error to the user.
 
 ## Testing
 
