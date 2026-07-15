@@ -62,15 +62,15 @@ todos
 ## Screens
 
 1. **Campaigns list (`/`)** — campaign cards showing title, goal, and progress % (done todos / total). "New Campaign" button.
-2. **New campaign intake (`/new`)** — one form: product name, what it does, target audience, goal, optional budget/timeline. Submit → loading state while AI generates → redirect to dashboard.
-3. **Campaign dashboard (`/campaigns/[id]`)** — goal header with progress, channel filter tabs (All + each channel), todo list with status checkboxes, priority badges, tool chips, due dates. Click a todo to edit any field. Add todos manually. "Regenerate" action re-runs AI generation for the campaign (replaces AI-generated channels/todos after confirmation).
+2. **New campaign intake (`/new`)** — one form: product name, what it does, target audience, goal (including timeframe, e.g. "10,000 users in 90 days"), optional budget. Submit → loading state while AI generates → redirect to dashboard.
+3. **Campaign dashboard (`/campaigns/[id]`)** — goal header with progress, channel filter tabs (All + each channel), todo list with status checkboxes, priority badges, tool chips, due dates. Click a todo to edit any field. Add todos manually. "Regenerate" action re-runs AI generation for the campaign; after an explicit confirmation it replaces **all** channels and todos (including manually added ones — v1 does not track which todos were AI-generated).
 
 ## AI generation flow
 
 One server route: `POST /api/campaigns/generate`
 
 1. Receives intake fields.
-2. Calls Claude with a prompt that includes the intake and the curated channel list, requesting structured JSON: `{ title, channels: [3–5 names], todos: [15–30 of { title, description, channel, priority, tool, due_in_days? }] }`.
+2. Calls Claude with a prompt that includes the intake and the curated channel list, requesting structured JSON: `{ title, channels: [3–5 names], todos: [15–30 of { title, description, channel, priority, tool, due_in_days? }] }`. `due_in_days` is converted to a concrete `due_date` (creation date + N days) at insert time.
 3. Validates the response with a Zod schema.
 4. Inserts campaign, channels, todos into Supabase in one transaction.
 5. Returns the campaign id; client redirects to the dashboard.
