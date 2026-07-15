@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateCampaign, type CampaignGen, type Intake } from "@/lib/generation";
 import { supabase } from "@/lib/supabase";
+import type { TodoPriority, TodoStatus } from "@/lib/types";
 
 export type CreateCampaignState = { error: string; values: Intake } | null;
 
@@ -92,4 +93,24 @@ export async function createCampaign(
 
   revalidatePath("/");
   redirect(`/campaigns/${campaignId}`); // must be outside try: redirect() throws internally
+}
+
+export type UpdateTodoInput = {
+  id: string;
+  campaign_id: string;
+  title?: string;
+  description?: string;
+  status?: TodoStatus;
+  priority?: TodoPriority;
+  tool?: string | null;
+  due_date?: string | null;
+  channel_id?: string;
+};
+
+export async function updateTodo(input: UpdateTodoInput): Promise<void> {
+  const { id, campaign_id, ...fields } = input;
+  const db = supabase();
+  const { error } = await db.from("todos").update(fields).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/campaigns/${campaign_id}`);
 }
