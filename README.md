@@ -29,6 +29,6 @@ Next.js 16 (App Router) · Supabase Postgres · Anthropic Claude (`claude-opus-4
 
 ## Docs
 
-- Spec: `docs/superpowers/specs/2026-07-15-growthos-v1-design.md`
-- Plan: `docs/superpowers/plans/2026-07-15-growthos-v1.md`
+- Spec: `docs/specs/2026-07-15-growthos-v1-design.md`
+- Plan: `docs/plans/2026-07-15-growthos-v1.md`
 - Product reference (v2+ direction): `docs/01`–`docs/13`
