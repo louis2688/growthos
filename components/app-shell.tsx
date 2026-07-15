@@ -6,6 +6,7 @@ import { useState } from "react";
 import { BarChart3, Menu, PanelLeftClose, PanelLeftOpen, Rocket, Settings, Wrench, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function Mark() {
   return (
@@ -121,16 +122,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
         <Nav showLabels={!collapsed} />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-3 w-full justify-center text-muted-foreground"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-          {!collapsed && <span className="ml-1 text-xs">Collapse</span>}
-        </Button>
+        <div className="mt-3 flex flex-col gap-0.5">
+          <ThemeToggle showLabel={!collapsed} />
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`text-muted-foreground ${collapsed ? "w-full justify-center" : "w-full justify-start"}`}
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+            {!collapsed && <span className="ml-1 text-xs">Collapse</span>}
+          </Button>
+        </div>
       </aside>
 
       {/* Mobile top bar + drawer */}
@@ -157,6 +161,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {mobileOpen && (
           <div className="border-t px-3 pt-2 pb-3">
             <Nav showLabels onNavigate={() => setMobileOpen(false)} />
+            <div className="mt-1">
+              <ThemeToggle />
+            </div>
           </div>
         )}
       </div>
