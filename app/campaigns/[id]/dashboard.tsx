@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Campaign, Channel, Todo, TodoPriority } from "@/lib/types";
+import { AddTodoDialog, EditTodoDialog } from "./todo-dialogs";
 
 const priorityVariant: Record<TodoPriority, "destructive" | "default" | "secondary"> = {
   high: "destructive",
@@ -24,6 +25,7 @@ export default function Dashboard({
   todos: Todo[];
 }) {
   const [activeChannel, setActiveChannel] = useState<string>("all");
+  const [editing, setEditing] = useState<Todo | null>(null);
   const [, startTransition] = useTransition();
 
   const channelName = new Map(channels.map((c) => [c.id, c.name]));
@@ -69,6 +71,10 @@ export default function Dashboard({
         ))}
       </div>
 
+      <div className="mb-6">
+        <AddTodoDialog campaignId={campaign.id} channels={channels} />
+      </div>
+
       <ul className="space-y-2">
         {visible.map((todo) => (
           <li
@@ -89,7 +95,11 @@ export default function Dashboard({
                 )
               }
             />
-            <div className="min-w-0 flex-1">
+            <div
+              className="min-w-0 flex-1 cursor-pointer"
+              onClick={() => setEditing(todo)}
+              title="Click to edit"
+            >
               <p className={todo.status === "done" ? "line-through text-muted-foreground" : ""}>
                 {todo.title}
               </p>
@@ -114,6 +124,17 @@ export default function Dashboard({
           <li className="text-muted-foreground">No todos in this channel.</li>
         )}
       </ul>
+
+      {editing && (
+        <EditTodoDialog
+          todo={editing}
+          channels={channels}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setEditing(null);
+          }}
+        />
+      )}
     </main>
   );
 }

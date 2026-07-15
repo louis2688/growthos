@@ -114,3 +114,28 @@ export async function updateTodo(input: UpdateTodoInput): Promise<void> {
   if (error) throw new Error(error.message);
   revalidatePath(`/campaigns/${campaign_id}`);
 }
+
+export type AddTodoInput = {
+  campaign_id: string;
+  channel_id: string;
+  title: string;
+  description?: string;
+  priority?: TodoPriority;
+  tool?: string | null;
+  due_date?: string | null;
+};
+
+export async function addTodo(input: AddTodoInput): Promise<void> {
+  const db = supabase();
+  const { error } = await db.from("todos").insert({
+    campaign_id: input.campaign_id,
+    channel_id: input.channel_id,
+    title: input.title,
+    description: input.description ?? "",
+    priority: input.priority ?? "medium",
+    tool: input.tool ?? null,
+    due_date: input.due_date ?? null,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/campaigns/${input.campaign_id}`);
+}
