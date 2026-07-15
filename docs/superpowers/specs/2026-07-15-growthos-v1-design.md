@@ -88,6 +88,6 @@ One test on the critical path: the generation route's parsing/validation — Zod
 
 ## Success criteria
 
-- Fill in the intake for a real product → get a coherent campaign with 3–5 relevant channels and 15–30 actionable todos in under ~60 seconds.
+- Fill in the intake for a real product → get a coherent campaign with 3–5 relevant channels and 15–30 actionable todos within a few minutes (typically 1–3 — adaptive-thinking generation latency).
 - Filter todos by channel, change status/priority, add and edit todos manually.
 - Deployed on Vercel, data persisted in Supabase.
