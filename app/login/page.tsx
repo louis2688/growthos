@@ -5,7 +5,7 @@ export default function LoginPage() {
     <main className="grid min-h-dvh place-items-center p-4">
       <div className="glass grid w-full max-w-4xl overflow-hidden rounded-2xl border shadow-xl shadow-primary/10 md:grid-cols-[1.05fr_1fr]">
         {/* Brand panel — the pitch, per design-system/ui-mockups.html */}
-        <div className="hidden flex-col justify-between bg-gradient-to-br from-primary via-secondary/90 to-brand-pink p-10 text-white md:flex">
+        <div className="hidden flex-col justify-between bg-gradient-to-br from-primary via-brand-indigo to-brand-pink p-10 text-white md:flex">
           <span className="flex items-center gap-2.5 font-heading text-lg font-bold">
             <span className="grid size-8 place-items-center rounded-lg bg-white/20">
               <svg
