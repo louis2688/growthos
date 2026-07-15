@@ -1,8 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { updateTodo } from "@/app/actions";
+import { regenerateCampaign, updateTodo } from "@/app/actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,9 +36,12 @@ export default function Dashboard({
   channels: Channel[];
   todos: Todo[];
 }) {
+  const router = useRouter();
   const [activeChannel, setActiveChannel] = useState<string>("all");
   const [editing, setEditing] = useState<Todo | null>(null);
   const [, startTransition] = useTransition();
+  const [regenPending, startRegen] = useTransition();
+  const [regenError, setRegenError] = useState<string | null>(null);
 
   const channelName = new Map(channels.map((c) => [c.id, c.name]));
   const visible =
@@ -46,10 +61,47 @@ export default function Dashboard({
           <h1 className="text-3xl font-bold">{campaign.title}</h1>
           <p className="mt-1 text-muted-foreground">{campaign.goal}</p>
         </div>
-        <Badge variant="secondary" className="text-sm">
-          {done}/{todos.length} done · {pct}%
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-sm">
+            {done}/{todos.length} done · {pct}%
+          </Badge>
+          <AlertDialog>
+            {/* Base UI: render prop replaces Radix asChild */}
+            <AlertDialogTrigger
+              render={<Button variant="outline" size="sm" disabled={regenPending} />}
+            >
+              {regenPending ? "Regenerating… this takes a minute or two" : "Regenerate"}
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Regenerate this campaign?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  The AI will rebuild the plan from your original answers. This replaces ALL
+                  channels and todos — including ones you added or edited yourself. This cannot
+                  be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    startRegen(async () => {
+                      setRegenError(null);
+                      const result = await regenerateCampaign(campaign.id);
+                      if (result?.error) setRegenError(result.error);
+                      else router.refresh();
+                    })
+                  }
+                >
+                  Regenerate
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
+
+      {regenError && <p className="mb-4 text-sm text-red-600">{regenError}</p>}
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Button

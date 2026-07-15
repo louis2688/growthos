@@ -139,3 +139,57 @@ export async function addTodo(input: AddTodoInput): Promise<void> {
   if (error) throw new Error(error.message);
   revalidatePath(`/campaigns/${input.campaign_id}`);
 }
+
+export async function regenerateCampaign(
+  campaignId: string,
+): Promise<{ error: string } | undefined> {
+  const db = supabase();
+  const { data: campaign } = await db
+    .from("campaigns")
+    .select("*")
+    .eq("id", campaignId)
+    .single();
+  if (!campaign) return { error: "Campaign not found." };
+
+  let gen: CampaignGen;
+  try {
+    // Generate BEFORE deleting anything: a failed generation must leave
+    // the existing campaign untouched.
+    gen = await generateCampaign({
+      productName: campaign.product_name,
+      productDescription: campaign.product_description,
+      audience: campaign.audience,
+      goal: campaign.goal,
+      budget: campaign.budget ?? undefined,
+    });
+  } catch (err) {
+    console.error("regenerateCampaign failed:", err);
+    return { error: "Regeneration failed — your existing campaign is untouched." };
+  }
+
+  // ponytail: no transaction — if the rebuild fails after the delete, the
+  // campaign is temporarily empty. Accepted deviation: the error tells the
+  // user to retry, and retrying is safe because the intake fields still
+  // live on the campaign row.
+  try {
+    // Deleting channels cascades to todos (including manually added ones, per spec).
+    const { error: delErr } = await db.from("channels").delete().eq("campaign_id", campaignId);
+    if (delErr) throw new Error(delErr.message);
+    await insertChannelsAndTodos(db, campaignId, gen);
+    const { error: upErr } = await db
+      .from("campaigns")
+      .update({ title: gen.title })
+      .eq("id", campaignId);
+    if (upErr) throw new Error(upErr.message);
+  } catch (err) {
+    console.error("regenerateCampaign failed while rebuilding:", err);
+    revalidatePath(`/campaigns/${campaignId}`);
+    return {
+      error:
+        "Regeneration failed while rebuilding — the campaign may be missing todos. Click Regenerate to try again.",
+    };
+  }
+
+  revalidatePath(`/campaigns/${campaignId}`);
+  revalidatePath("/");
+}
