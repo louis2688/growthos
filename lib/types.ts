@@ -56,7 +56,7 @@ export type Plan = {
 };
 
 /** Agents that can actually run a todo. A tool with no handler is catalog-only. */
-export type ToolHandler = "post_writer";
+export type ToolHandler = "post_writer" | "seo_optimizer" | "email_digest";
 
 /** Global catalog row — not scoped to a campaign (domain-model-uml.html). */
 export type Tool = {
@@ -92,6 +92,8 @@ export type Todo = {
   estimated_time: string | null;
   /** The artifact a tool run produced (e.g. a drafted post) — null until run. */
   output: string | null;
+  /** Which tool actually produced `output` — may differ from tool_id after a reassign. */
+  output_tool_id: string | null;
   tool_id: string | null;
   due_date: string | null; // ISO date (YYYY-MM-DD)
   created_at: string;

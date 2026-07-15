@@ -7,6 +7,8 @@ import { researchChannels } from "@/lib/agents/channel-research";
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
 import { recommendTools } from "@/lib/agents/tool-recommender";
 import { formatDraft, writePost } from "@/lib/agents/post-writer";
+import { formatSeoRewrite, optimizeForSeo } from "@/lib/agents/seo-optimizer";
+import { composeEmailDigest, formatEmailDigest } from "@/lib/agents/email-digest";
 import { createClient, currentUser } from "@/lib/supabase/server";
 import type { Channel, Goal, Priority, Tool, TodoStatus } from "@/lib/types";
 
@@ -383,6 +385,35 @@ export async function regenerateCampaign(
 /* ---------- Running a todo's tool ---------- */
 
 /**
+ * The campaign's real progress: only todos actually marked done count as milestones.
+ * The email agent is told this list is its whole factual record, so anything wrong
+ * here becomes a fabricated claim to subscribers.
+ */
+async function campaignMilestones(
+  db: Awaited<ReturnType<typeof createClient>>,
+  campaignId: string,
+): Promise<{ milestones: { title: string; plan: string }[]; progress: { done: number; total: number } }> {
+  const [{ data: todos, error: todoErr }, { data: plans, error: planErr }] = await Promise.all([
+    db.from("todos").select("title, status, plan_id").eq("campaign_id", campaignId),
+    db.from("plans").select("id, title").eq("campaign_id", campaignId),
+  ]);
+  // Coercing a failed read to [] would tell the agent "nothing is done yet" and it would
+  // sincerely write that to subscribers. Fail loudly instead — the caller's catch handles it.
+  if (todoErr || planErr || !todos || !plans) {
+    throw new Error(`Could not read campaign progress: ${todoErr?.message ?? planErr?.message}`);
+  }
+
+  const planTitle = new Map(plans.map((p) => [p.id, p.title as string]));
+  const all = todos;
+  const done = all.filter((t) => t.status === "done");
+
+  return {
+    milestones: done.map((t) => ({ title: t.title, plan: planTitle.get(t.plan_id) ?? "" })),
+    progress: { done: done.length, total: all.length },
+  };
+}
+
+/**
  * Executes the agent named by the todo's tool.handler and stores what it produced
  * on todos.output. RLS scopes every read here, so a todo the caller doesn't own
  * simply isn't found.
@@ -417,25 +448,41 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
   if (!channel) return { error: "Campaign data is incomplete." };
 
   try {
+    const shared = {
+      productName: campaign.name,
+      productDescription: campaign.description,
+      goal: { objective: goal.objective, audience: goal.audience },
+      plan: { title: plan.title, objective: plan.objective },
+      todo: { title: todo.title, description: todo.description },
+    };
+
     let output: string;
     switch ((tool as Tool).handler) {
       case "post_writer":
-        output = formatDraft(
-          await writePost({
-            productName: campaign.name,
-            productDescription: campaign.description,
-            goal: { objective: goal.objective, audience: goal.audience },
-            channel,
-            plan: { title: plan.title, objective: plan.objective },
-            todo: { title: todo.title, description: todo.description },
-          }),
+        output = formatDraft(await writePost({ ...shared, channel }));
+        break;
+
+      case "seo_optimizer":
+        output = formatSeoRewrite(await optimizeForSeo({ ...shared, channel }));
+        break;
+
+      case "email_digest": {
+        output = formatEmailDigest(
+          await composeEmailDigest({ ...shared, ...(await campaignMilestones(db, todo.campaign_id)) }),
         );
         break;
+      }
+
       default:
         return { error: `No handler wired for ${(tool as Tool).name}.` };
     }
 
-    const { error } = await db.from("todos").update({ output }).eq("id", todoId);
+    // Stamp provenance with the artifact so the UI can never caption a draft with a
+    // tool that didn't write it.
+    const { error } = await db
+      .from("todos")
+      .update({ output, output_tool_id: todo.tool_id })
+      .eq("id", todoId);
     if (error) throw new Error(error.message);
   } catch (err) {
     console.error(`runTodoTool failed for todo ${todoId}:`, err);
@@ -452,7 +499,10 @@ export async function clearTodoOutput(
   campaignId: string,
 ): Promise<{ error: string } | undefined> {
   const db = await createClient();
-  const { error } = await db.from("todos").update({ output: null }).eq("id", todoId);
+  const { error } = await db
+    .from("todos")
+    .update({ output: null, output_tool_id: null })
+    .eq("id", todoId);
   if (error) return { error: error.message };
   revalidatePath(`/campaigns/${campaignId}`);
 }

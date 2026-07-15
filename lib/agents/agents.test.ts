@@ -4,6 +4,8 @@ import { ChannelResearchSchema } from "./channel-research";
 import { CampaignPlanSchema } from "./campaign-generator";
 import { ToolRecommendationSchema, recommendTools } from "./tool-recommender";
 import { PostDraftSchema, formatDraft } from "./post-writer";
+import { SeoRewriteSchema, formatSeoRewrite } from "./seo-optimizer";
+import { EmailDigestSchema, formatEmailDigest } from "./email-digest";
 
 describe("GoalAnalysisSchema", () => {
   const valid = {
@@ -178,5 +180,55 @@ describe("formatDraft", () => {
 
   it("omits an empty title and empty notes", () => {
     expect(formatDraft({ title: "", body: "B", notes: "" })).toBe("B");
+  });
+});
+
+describe("SeoRewriteSchema", () => {
+  const valid = {
+    keywords: ["freelance expense tracking", "irregular income budgeting", "1099 bookkeeping"],
+    title: "Freelance expense tracking that survives tax season",
+    body: "Copy here.",
+    notes: "Kept the original voice.",
+  };
+
+  it("accepts a valid rewrite", () => {
+    expect(SeoRewriteSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects too few keywords", () => {
+    expect(SeoRewriteSchema.safeParse({ ...valid, keywords: ["one", "two"] }).success).toBe(false);
+  });
+
+  it("rejects keyword stuffing beyond 8 terms", () => {
+    const bad = { ...valid, keywords: Array.from({ length: 9 }, (_, i) => `kw${i}`) };
+    expect(SeoRewriteSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("formatSeoRewrite", () => {
+  it("appends the target keywords so the user can see what it aimed at", () => {
+    const out = formatSeoRewrite({ keywords: ["a", "b"], title: "T", body: "B", notes: "N" });
+    expect(out).toBe("T\n\nB\n\n---\nTarget keywords: a, b\n\nEditor's notes: N");
+  });
+});
+
+describe("EmailDigestSchema", () => {
+  const valid = { subject: "S", preview: "P", body: "B", notes: "N" };
+
+  it("accepts a valid digest", () => {
+    expect(EmailDigestSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects a digest with no subject field", () => {
+    const { subject: _s, ...rest } = valid;
+    expect(EmailDigestSchema.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe("formatEmailDigest", () => {
+  it("labels subject and preview so the artifact is pasteable into any ESP", () => {
+    expect(formatEmailDigest({ subject: "S", preview: "P", body: "B", notes: "N" })).toBe(
+      "Subject: S\n\nPreview: P\n\nB\n\n---\nBefore sending: N",
+    );
   });
 });

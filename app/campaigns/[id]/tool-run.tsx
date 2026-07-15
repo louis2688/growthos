@@ -7,18 +7,40 @@ import { Button } from "@/components/ui/button";
 import type { Todo, Tool } from "@/lib/types";
 
 /**
- * Run control + artifact panel for one todo. Only rendered when the todo's tool
- * has a handler — a catalog-only tool gets no Run button to click.
+ * Run control + artifact panel for one todo.
+ *
+ * `tool` is what's assigned now — null, or one without a handler, means there's nothing
+ * to run, but an artifact from an earlier tool must still be readable rather than
+ * silently orphaned. `producedBy` is who actually wrote it.
  */
-export function ToolRun({ todo, tool }: { todo: Todo; tool: Tool }) {
+export function ToolRun({
+  todo,
+  tool,
+  producedBy,
+}: {
+  todo: Todo;
+  tool: Tool | null;
+  producedBy: Tool | null;
+}) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const runnable = tool?.handler ? tool : null;
+  const stale = todo.output != null && producedBy != null && producedBy.id !== tool?.id;
 
   function run() {
     start(async () => {
       setError(null);
       const result = await runTodoTool(todo.id);
+      if (result?.error) setError(result.error);
+    });
+  }
+
+  function discard() {
+    start(async () => {
+      setError(null);
+      const result = await clearTodoOutput(todo.id, todo.campaign_id);
       if (result?.error) setError(result.error);
     });
   }
@@ -33,26 +55,28 @@ export function ToolRun({ todo, tool }: { todo: Todo; tool: Tool }) {
   return (
     <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant={todo.output ? "outline" : "default"} disabled={pending} onClick={run}>
-          <Sparkles className="size-3.5" aria-hidden />
-          {pending
-            ? `Running ${tool.name}…`
-            : todo.output
-              ? "Re-run"
-              : `Run ${tool.name}`}
-        </Button>
+        {runnable && (
+          <Button
+            size="sm"
+            variant={todo.output && !stale ? "outline" : "default"}
+            disabled={pending}
+            onClick={run}
+          >
+            <Sparkles className="size-3.5" aria-hidden />
+            {pending
+              ? `Running ${runnable.name}…`
+              : todo.output && !stale
+                ? "Re-run"
+                : `Run ${runnable.name}`}
+          </Button>
+        )}
         {todo.output && !pending && (
           <>
             <Button size="sm" variant="ghost" onClick={copy}>
               {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
               {copied ? "Copied" : "Copy"}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={() => start(() => clearTodoOutput(todo.id, todo.campaign_id).then(() => undefined))}
-            >
+            <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={discard}>
               Discard
             </Button>
           </>
@@ -64,7 +88,8 @@ export function ToolRun({ todo, tool }: { todo: Todo; tool: Tool }) {
       {todo.output && (
         <details className="mt-2 rounded-xl border bg-muted/30" open>
           <summary className="cursor-pointer px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Draft from {tool.name}
+            Draft from {producedBy?.name ?? "a removed tool"}
+            {stale && (tool ? ` — this todo now uses ${tool.name}` : " — this todo has no tool now")}
           </summary>
           <p className="whitespace-pre-wrap px-3 pb-3 text-sm leading-relaxed">{todo.output}</p>
         </details>

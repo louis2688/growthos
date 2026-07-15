@@ -101,6 +101,10 @@ export default function Board({
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Channel</Label>
           <Select
             value={channelFilter}
+            items={[
+              { value: ALL, label: "All channels" },
+              ...channels.map((c) => ({ value: c.id, label: c.name })),
+            ]}
             onValueChange={(v) => {
               setChannelFilter(String(v));
               setPlanFilter(ALL); // a stale plan pick would hide every todo
@@ -122,7 +126,14 @@ export default function Board({
 
         <div className="space-y-1.5">
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Plan</Label>
-          <Select value={planFilter} onValueChange={(v) => setPlanFilter(String(v))}>
+          <Select
+            value={planFilter}
+            items={[
+              { value: ALL, label: "All plans" },
+              ...plansForChannel.map((p) => ({ value: p.id, label: p.title })),
+            ]}
+            onValueChange={(v) => setPlanFilter(String(v))}
+          >
             <SelectTrigger className="min-w-[180px]">
               <SelectValue />
             </SelectTrigger>

@@ -260,7 +260,17 @@ export default function Dashboard({
                                 )}
                               </div>
                             </div>
-                            {tool?.handler && <ToolRun todo={todo} tool={tool} />}
+                            {(tool?.handler || todo.output) && (
+                              <ToolRun
+                                todo={todo}
+                                tool={tool ?? null}
+                                producedBy={
+                                  todo.output_tool_id
+                                    ? (toolById.get(todo.output_tool_id) ?? null)
+                                    : null
+                                }
+                              />
+                            )}
                           </div>
                         </li>
                       );

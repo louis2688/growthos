@@ -36,6 +36,10 @@ function TodoFields({
   defaults?: Partial<Todo>;
   withStatus?: boolean;
 }) {
+  // A disabled tool can't be assigned, but keep one already on the todo so editing
+  // an unrelated field doesn't silently drop it.
+  const selectableTools = tools.filter((t) => t.status !== "disabled" || t.id === defaults?.tool_id);
+
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
@@ -49,7 +53,12 @@ function TodoFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label>Plan</Label>
-          <Select name="plan_id" defaultValue={defaults?.plan_id ?? plans[0]?.id}>
+          {/* items maps id -> title; without it Base UI renders the raw uuid in the trigger. */}
+          <Select
+            name="plan_id"
+            defaultValue={defaults?.plan_id ?? plans[0]?.id}
+            items={plans.map((p) => ({ value: p.id, label: p.title }))}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -77,19 +86,24 @@ function TodoFields({
         </div>
         <div className="space-y-1.5">
           <Label>Tool</Label>
-          <Select name="tool_id" defaultValue={defaults?.tool_id ?? NO_TOOL}>
+          <Select
+            name="tool_id"
+            defaultValue={defaults?.tool_id ?? NO_TOOL}
+            items={[
+              { value: NO_TOOL, label: "No tool" },
+              ...selectableTools.map((t) => ({ value: t.id, label: t.name })),
+            ]}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={NO_TOOL}>No tool</SelectItem>
-              {tools
-                .filter((t) => t.status !== "disabled")
-                .map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                  </SelectItem>
-                ))}
+              {selectableTools.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
