@@ -1,11 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Tool } from "@/lib/types";
-import Catalog from "./catalog";
+import Catalog, { type ToolUsage } from "./catalog";
 
 export const dynamic = "force-dynamic";
 
 export default async function ToolboxPage() {
   const db = await createClient();
-  const { data: tools } = await db.from("tools").select("*").order("name");
-  return <Catalog tools={(tools ?? []) as Tool[]} />;
+  // RLS scopes plan_tools/todos to the caller, so usage counts are this user's own.
+  const [{ data: tools }, { data: planTools }, { data: todos }] = await Promise.all([
+    db.from("tools").select("*").order("name"),
+    db.from("plan_tools").select("tool_id, plan_id"),
+    db.from("todos").select("tool_id, campaign_id"),
+  ]);
+
+  const usage: Record<string, ToolUsage> = {};
+  for (const t of (tools ?? []) as Tool[]) usage[t.id] = { plans: 0, todos: 0 };
+  for (const pt of planTools ?? []) if (usage[pt.tool_id]) usage[pt.tool_id].plans += 1;
+  for (const td of todos ?? []) if (td.tool_id && usage[td.tool_id]) usage[td.tool_id].todos += 1;
+
+  return <Catalog tools={(tools ?? []) as Tool[]} usage={usage} />;
 }

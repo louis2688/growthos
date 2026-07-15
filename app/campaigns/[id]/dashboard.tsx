@@ -30,6 +30,7 @@ import type {
   Tool,
 } from "@/lib/types";
 import { AddTodoDialog, EditTodoDialog } from "./todo-dialogs";
+import { ToolRun } from "./tool-run";
 
 const priorityPill: Record<Priority, string> = {
   high: "border-transparent bg-destructive/10 text-destructive",
@@ -222,45 +223,44 @@ export default function Dashboard({
                               )
                             }
                           />
-                          <div
-                            className="min-w-0 flex-1 cursor-pointer"
-                            onClick={() => setEditing(todo)}
-                            title="Click to edit"
-                          >
-                            <p
-                              className={
-                                todo.status === "done" ? "line-through text-muted-foreground" : ""
-                              }
-                            >
-                              {todo.title}
-                            </p>
-                            {todo.description && (
-                              <p className="mt-0.5 text-sm text-muted-foreground">
-                                {todo.description}
+                          <div className="min-w-0 flex-1">
+                            <div className="cursor-pointer" onClick={() => setEditing(todo)} title="Click to edit">
+                              <p
+                                className={
+                                  todo.status === "done" ? "line-through text-muted-foreground" : ""
+                                }
+                              >
+                                {todo.title}
                               </p>
-                            )}
-                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                              <Badge className={priorityPill[todo.priority]}>{todo.priority}</Badge>
-                              {todo.status === "in_progress" && (
-                                <Badge className="border-transparent bg-primary/10 text-primary">
-                                  in progress
-                                </Badge>
+                              {todo.description && (
+                                <p className="mt-0.5 text-sm text-muted-foreground">
+                                  {todo.description}
+                                </p>
                               )}
-                              {todo.status === "review" && (
-                                <Badge className="border-transparent bg-sky-600/10 text-sky-600 dark:text-sky-400">
-                                  review
-                                </Badge>
-                              )}
-                              {tool && <Badge className={toolTag}>{tool.name}</Badge>}
-                              {todo.estimated_time && (
-                                <span className="text-muted-foreground">~{todo.estimated_time}</span>
-                              )}
-                              {todo.due_date && (
-                                <span className="tabular-nums text-muted-foreground">
-                                  due {todo.due_date}
-                                </span>
-                              )}
+                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                                <Badge className={priorityPill[todo.priority]}>{todo.priority}</Badge>
+                                {todo.status === "in_progress" && (
+                                  <Badge className="border-transparent bg-primary/10 text-primary">
+                                    in progress
+                                  </Badge>
+                                )}
+                                {todo.status === "review" && (
+                                  <Badge className="border-transparent bg-sky-600/10 text-sky-600 dark:text-sky-400">
+                                    review
+                                  </Badge>
+                                )}
+                                {tool && <Badge className={toolTag}>{tool.name}</Badge>}
+                                {todo.estimated_time && (
+                                  <span className="text-muted-foreground">~{todo.estimated_time}</span>
+                                )}
+                                {todo.due_date && (
+                                  <span className="tabular-nums text-muted-foreground">
+                                    due {todo.due_date}
+                                  </span>
+                                )}
+                              </div>
                             </div>
+                            {tool?.handler && <ToolRun todo={todo} tool={tool} />}
                           </div>
                         </li>
                       );

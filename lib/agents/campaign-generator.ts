@@ -24,7 +24,6 @@ export const CampaignPlanSchema = z.object({
                 .describe("1-3 sentences: exactly what to do and what output it produces"),
               priority: z.enum(["high", "medium", "low"]),
               estimated_time: z.string().optional().describe("e.g. '2 hours', '30 min'"),
-              output: z.string().optional().describe("The concrete artifact this produces"),
               due_in_days: z.number().int().min(0).max(180).optional(),
             }),
           )
@@ -66,7 +65,7 @@ Create exactly one Plan per channel:
   expected impact toward the goal.
 - 3-8 concrete todos per plan, sequenced sensibly against the timeframe: short imperative
   title, a description of exactly what to do and what output it produces, priority,
-  estimated_time, the output artifact, and due_in_days from today.`;
+  estimated_time, and due_in_days from today.`;
 }
 
 export async function generateCampaignPlan(input: GeneratorInput): Promise<CampaignPlan> {

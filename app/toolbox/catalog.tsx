@@ -3,8 +3,17 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { Tool, ToolCategory, ToolIntegration, ToolStatus } from "@/lib/types";
+
+export type ToolUsage = { plans: number; todos: number };
 
 const CATEGORIES: (ToolCategory | "all")[] = [
   "all",
@@ -44,32 +53,111 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-function ActionButton({ tool }: { tool: Tool }) {
+/** What this tool can actually do today — the card and dialog both key off this. */
+function availability(tool: Tool): { label: string; tone: string; detail: string } {
   if (tool.status === "disabled") {
-    return (
-      <Button size="sm" variant="outline" disabled>
-        Disabled
-      </Button>
-    );
+    return {
+      label: "Disabled",
+      tone: "border-muted-foreground/30 text-muted-foreground",
+      detail: "This tool is switched off in the catalog and won't be suggested for any plan.",
+    };
   }
-  if (tool.integration_type === "api") return <Button size="sm">Connect</Button>;
+  if (tool.handler) {
+    return {
+      label: "Ready to run",
+      tone: "border-emerald-600/40 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400",
+      detail:
+        "Open a todo this tool is assigned to and press Run — the draft is saved onto that todo.",
+    };
+  }
   if (tool.integration_type === "link-out") {
-    return (
-      <Button size="sm" variant="secondary">
-        Open ↗
-      </Button>
-    );
+    return {
+      label: "Opens externally",
+      tone: "border-brand-indigo/40 text-brand-indigo",
+      detail: "This one hands off to an external site — GrowthOS just points you at it.",
+    };
   }
+  return {
+    label: "Not built yet",
+    tone: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    detail:
+      tool.integration_type === "api"
+        ? "The AI can suggest this tool and assign it to todos, but connecting it to its API isn't built yet — for now you'd do this step by hand."
+        : "The AI can suggest this tool and assign it to todos, but nothing runs it yet — for now you'd do this step by hand.",
+  };
+}
+
+function ToolDialog({
+  tool,
+  usage,
+  onOpenChange,
+}: {
+  tool: Tool;
+  usage: ToolUsage;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const state = availability(tool);
   return (
-    <Button size="sm" variant="outline">
-      Configure
-    </Button>
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex flex-wrap items-center gap-2">
+            {tool.name}
+            <Badge className={statusBadge[tool.status]}>{tool.status}</Badge>
+          </DialogTitle>
+          <DialogDescription>{tool.description}</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant="outline">{tool.category}</Badge>
+            <Badge variant="secondary">{integrationLabel[tool.integration_type]}</Badge>
+            <Badge className={state.tone}>{state.label}</Badge>
+          </div>
+
+          <p className="text-sm text-muted-foreground">{state.detail}</p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border p-3">
+              <p className="font-heading text-2xl font-bold tabular-nums">{usage.plans}</p>
+              <p className="text-xs text-muted-foreground">
+                {usage.plans === 1 ? "plan suggests it" : "plans suggest it"}
+              </p>
+            </div>
+            <div className="rounded-xl border p-3">
+              <p className="font-heading text-2xl font-bold tabular-nums">{usage.todos}</p>
+              <p className="text-xs text-muted-foreground">
+                {usage.todos === 1 ? "todo assigned" : "todos assigned"}
+              </p>
+            </div>
+          </div>
+
+          {tool.url && (
+            <a
+              href={tool.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block break-all text-xs text-muted-foreground underline"
+            >
+              {tool.url}
+            </a>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-export default function Catalog({ tools }: { tools: Tool[] }) {
+export default function Catalog({
+  tools,
+  usage,
+}: {
+  tools: Tool[];
+  usage: Record<string, ToolUsage>;
+}) {
   const [category, setCategory] = useState<ToolCategory | "all">("all");
   const [search, setSearch] = useState("");
+  const [open, setOpen] = useState<Tool | null>(null);
 
   const term = search.trim().toLowerCase();
   const filtered = tools.filter((t) => {
@@ -81,7 +169,7 @@ export default function Catalog({ tools }: { tools: Tool[] }) {
 
   const stats = [
     { k: "Total", v: tools.length },
-    { k: "Active", v: tools.filter((t) => t.status === "active").length },
+    { k: "Ready to run", v: tools.filter((t) => t.handler && t.status !== "disabled").length },
     { k: "Beta", v: tools.filter((t) => t.status === "beta").length },
   ];
 
@@ -91,8 +179,8 @@ export default function Catalog({ tools }: { tools: Tool[] }) {
         <div>
           <h1 className="font-heading text-2xl font-bold">Toolbox</h1>
           <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            AI and marketing tools available across every campaign. Browse, search, and connect —
-            independent of any single plan.
+            AI and marketing tools available across every campaign. The AI picks from these when it
+            builds your plans — the ones marked ready to run can do the work too.
           </p>
         </div>
         <div className="flex gap-3">
@@ -135,47 +223,82 @@ export default function Catalog({ tools }: { tools: Tool[] }) {
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((tool) => (
-          <article
-            key={tool.id}
-            className={`glass flex flex-col rounded-2xl border p-4 ${
-              tool.status === "disabled" ? "opacity-60" : ""
-            }`}
-          >
-            <div className="flex gap-3">
-              <div
-                aria-hidden
-                className={`flex size-11 flex-none items-center justify-center rounded-xl font-heading font-bold ${categoryIcon[tool.category]}`}
-              >
-                {initials(tool.name)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <h2 className="font-heading font-semibold leading-tight">{tool.name}</h2>
-                  <Badge className={statusBadge[tool.status]}>{tool.status}</Badge>
+        {filtered.map((tool) => {
+          const state = availability(tool);
+          const u = usage[tool.id] ?? { plans: 0, todos: 0 };
+          return (
+            <article
+              key={tool.id}
+              className={`glass flex flex-col rounded-2xl border p-4 ${
+                tool.status === "disabled" ? "opacity-60" : ""
+              }`}
+            >
+              <div className="flex gap-3">
+                <div
+                  aria-hidden
+                  className={`flex size-11 flex-none items-center justify-center rounded-xl font-heading font-bold ${categoryIcon[tool.category]}`}
+                >
+                  {initials(tool.name)}
                 </div>
-                <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {tool.category}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <h2 className="font-heading font-semibold leading-tight">{tool.name}</h2>
+                    <Badge className={statusBadge[tool.status]}>{tool.status}</Badge>
+                  </div>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {tool.category}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <p className="mt-3 flex-1 text-sm text-muted-foreground">{tool.description}</p>
+              <p className="mt-3 flex-1 text-sm text-muted-foreground">{tool.description}</p>
 
-            <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {integrationLabel[tool.integration_type]}
-              </span>
-              <ActionButton tool={tool} />
-            </div>
-          </article>
-        ))}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <Badge className={state.tone}>{state.label}</Badge>
+                {u.todos > 0 && (
+                  <span className="text-[11px] text-muted-foreground">
+                    on {u.todos} {u.todos === 1 ? "todo" : "todos"}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {integrationLabel[tool.integration_type]}
+                </span>
+                <div className="flex gap-1.5">
+                  {tool.url && tool.status !== "disabled" && (
+                    <a
+                      href={tool.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-8 items-center rounded-md border px-3 text-sm font-medium hover:bg-accent"
+                    >
+                      Open ↗
+                    </a>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => setOpen(tool)}>
+                    Details
+                  </Button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
         {filtered.length === 0 && (
           <p className="col-span-full rounded-2xl border border-dashed py-16 text-center text-sm text-muted-foreground">
             No tools match your search.
           </p>
         )}
       </div>
+
+      {open && (
+        <ToolDialog
+          tool={open}
+          usage={usage[open.id] ?? { plans: 0, todos: 0 }}
+          onOpenChange={(o) => !o && setOpen(null)}
+        />
+      )}
     </main>
   );
 }

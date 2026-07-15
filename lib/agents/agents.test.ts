@@ -3,6 +3,7 @@ import { GoalAnalysisSchema } from "./goal-analyzer";
 import { ChannelResearchSchema } from "./channel-research";
 import { CampaignPlanSchema } from "./campaign-generator";
 import { ToolRecommendationSchema, recommendTools } from "./tool-recommender";
+import { PostDraftSchema, formatDraft } from "./post-writer";
 
 describe("GoalAnalysisSchema", () => {
   const valid = {
@@ -150,5 +151,32 @@ describe("recommendTools", () => {
       catalog: [],
     });
     expect(rec).toEqual({ tools: [], todo_tools: [] });
+  });
+});
+
+describe("PostDraftSchema", () => {
+  const valid = { title: "How I track freelance income", body: "Post body here.", notes: "Post Tuesday AM." };
+
+  it("accepts a valid draft", () => {
+    expect(PostDraftSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("accepts an empty title — some channels have no subject line", () => {
+    expect(PostDraftSchema.safeParse({ ...valid, title: "" }).success).toBe(true);
+  });
+
+  it("rejects a draft missing a body", () => {
+    const { body: _b, ...rest } = valid;
+    expect(PostDraftSchema.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe("formatDraft", () => {
+  it("joins title, body and notes into one pasteable artifact", () => {
+    expect(formatDraft({ title: "T", body: "B", notes: "N" })).toBe("T\n\nB\n\n---\nPosting notes: N");
+  });
+
+  it("omits an empty title and empty notes", () => {
+    expect(formatDraft({ title: "", body: "B", notes: "" })).toBe("B");
   });
 });

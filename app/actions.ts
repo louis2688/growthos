@@ -6,6 +6,7 @@ import { analyzeGoal } from "@/lib/agents/goal-analyzer";
 import { researchChannels } from "@/lib/agents/channel-research";
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
 import { recommendTools } from "@/lib/agents/tool-recommender";
+import { formatDraft, writePost } from "@/lib/agents/post-writer";
 import { createClient, currentUser } from "@/lib/supabase/server";
 import type { Channel, Goal, Priority, Tool, TodoStatus } from "@/lib/types";
 
@@ -227,7 +228,6 @@ async function insertPlansAndTodos(
           description: t.description,
           priority: t.priority,
           estimated_time: t.estimated_time ?? null,
-          output: t.output ?? null,
           due_date: t.due_in_days != null ? isoDateInDays(t.due_in_days) : null,
         })),
       )
@@ -378,6 +378,83 @@ export async function regenerateCampaign(
 
   revalidatePath(`/campaigns/${campaignId}`);
   revalidatePath("/");
+}
+
+/* ---------- Running a todo's tool ---------- */
+
+/**
+ * Executes the agent named by the todo's tool.handler and stores what it produced
+ * on todos.output. RLS scopes every read here, so a todo the caller doesn't own
+ * simply isn't found.
+ */
+export async function runTodoTool(todoId: string): Promise<{ error: string } | undefined> {
+  const db = await createClient();
+
+  const { data: todo } = await db
+    .from("todos")
+    .select("id, campaign_id, plan_id, title, description, tool_id")
+    .eq("id", todoId)
+    .single();
+  if (!todo) return { error: "Todo not found." };
+  if (!todo.tool_id) return { error: "This todo has no tool assigned." };
+
+  const [{ data: tool }, { data: plan }, { data: campaign }, { data: goal }] = await Promise.all([
+    db.from("tools").select("*").eq("id", todo.tool_id).single(),
+    db.from("plans").select("id, title, objective, channel_id").eq("id", todo.plan_id).single(),
+    db.from("campaigns").select("name, description").eq("id", todo.campaign_id).single(),
+    db.from("goals").select("objective, audience").eq("campaign_id", todo.campaign_id).single(),
+  ]);
+  if (!tool || !plan || !campaign || !goal) return { error: "Campaign data is incomplete." };
+  if (!(tool as Tool).handler) {
+    return { error: `${(tool as Tool).name} can't be run yet — it's catalog-only for now.` };
+  }
+
+  const { data: channel } = await db
+    .from("channels")
+    .select("name, platform, type")
+    .eq("id", plan.channel_id)
+    .single();
+  if (!channel) return { error: "Campaign data is incomplete." };
+
+  try {
+    let output: string;
+    switch ((tool as Tool).handler) {
+      case "post_writer":
+        output = formatDraft(
+          await writePost({
+            productName: campaign.name,
+            productDescription: campaign.description,
+            goal: { objective: goal.objective, audience: goal.audience },
+            channel,
+            plan: { title: plan.title, objective: plan.objective },
+            todo: { title: todo.title, description: todo.description },
+          }),
+        );
+        break;
+      default:
+        return { error: `No handler wired for ${(tool as Tool).name}.` };
+    }
+
+    const { error } = await db.from("todos").update({ output }).eq("id", todoId);
+    if (error) throw new Error(error.message);
+  } catch (err) {
+    console.error(`runTodoTool failed for todo ${todoId}:`, err);
+    // Any previous output is left intact — a failed re-run shouldn't destroy a good draft.
+    return { error: `${(tool as Tool).name} failed to run. Please try again.` };
+  }
+
+  revalidatePath(`/campaigns/${todo.campaign_id}`);
+}
+
+/** Discards a tool run's artifact, e.g. to start over from a clean slate. */
+export async function clearTodoOutput(
+  todoId: string,
+  campaignId: string,
+): Promise<{ error: string } | undefined> {
+  const db = await createClient();
+  const { error } = await db.from("todos").update({ output: null }).eq("id", todoId);
+  if (error) return { error: error.message };
+  revalidatePath(`/campaigns/${campaignId}`);
 }
 
 /* ---------- Todo mutations ---------- */
