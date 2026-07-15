@@ -1,17 +1,12 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/proxy";
 
-// ponytail: HTTP Basic Auth gate — free stand-in for Vercel's paid production
-// protection. Unset APP_PASSWORD (local dev) = open. Real auth is a v2 item.
-export function proxy(req: NextRequest) {
-  const password = process.env.APP_PASSWORD;
-  if (!password) return NextResponse.next();
-
-  const expected = "Basic " + btoa(`growthos:${password}`);
-  if (req.headers.get("authorization") === expected) return NextResponse.next();
-
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="GrowthOS"' },
-  });
+// Real auth replaces the old Basic Auth gate: unauthenticated requests are
+// redirected to /login, and every request refreshes the Supabase session.
+export async function proxy(request: NextRequest) {
+  return await updateSession(request);
 }
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+};

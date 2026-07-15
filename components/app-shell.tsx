@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BarChart3, Menu, PanelLeftClose, PanelLeftOpen, Rocket, Settings, Wrench, X } from "lucide-react";
+import { BarChart3, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Rocket, Settings, Wrench, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { signOut } from "@/app/login/actions";
 
 function Mark() {
   return (
@@ -39,9 +40,11 @@ const soonItems = [
 function Nav({
   showLabels,
   onNavigate,
+  user,
 }: {
   showLabels: boolean;
   onNavigate?: () => void;
+  user: { email: string; name: string; initial: string };
 }) {
   const pathname = usePathname();
   const campaignsActive =
@@ -81,31 +84,54 @@ function Nav({
           )}
         </span>
       ))}
-      <span
-        title="Profile — coming with v2 auth"
-        className={`mt-auto flex items-center gap-2.5 rounded-xl border-t px-3 pt-3.5 pb-1 text-sm font-medium text-muted-foreground/80 ${
-          showLabels ? "" : "justify-center px-0"
-        }`}
-      >
-        <span className="grid size-8 flex-none place-items-center rounded-full bg-gradient-to-br from-primary to-brand-pink font-heading text-xs font-bold text-white">
-          L
-        </span>
-        {showLabels && (
-          <>
-            <span className="truncate">Louis M.</span>
-            <Badge variant="secondary" className="ml-auto text-[10px]">
-              soon
-            </Badge>
-          </>
-        )}
-      </span>
+      <div className={`mt-auto border-t pt-3 ${showLabels ? "" : "flex flex-col items-center"}`}>
+        <div
+          title={user.email}
+          className={`flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm ${
+            showLabels ? "" : "justify-center px-0"
+          }`}
+        >
+          <span className="grid size-8 flex-none place-items-center rounded-full bg-gradient-to-br from-primary to-brand-pink font-heading text-xs font-bold text-white">
+            {user.initial}
+          </span>
+          {showLabels && (
+            <span className="min-w-0">
+              <span className="block truncate font-medium">{user.name}</span>
+              <span className="block truncate text-[11px] text-muted-foreground">{user.email}</span>
+            </span>
+          )}
+        </div>
+        <form action={signOut} className="mt-0.5">
+          <Button
+            type="submit"
+            variant="ghost"
+            size="sm"
+            onClick={onNavigate}
+            aria-label="Log out"
+            className={`text-muted-foreground ${showLabels ? "w-full justify-start" : "w-full justify-center"}`}
+          >
+            <LogOut className="size-4" aria-hidden />
+            {showLabels && <span className="ml-1 text-xs">Log out</span>}
+          </Button>
+        </form>
+      </div>
     </nav>
   );
 }
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: { email: string; name: string; initial: string } | null;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Login page has its own full-bleed layout — no shell.
+  if (!user || pathname.startsWith("/login")) return <>{children}</>;
 
   return (
     <div className="flex min-h-dvh w-full max-md:flex-col">
@@ -121,7 +147,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {!collapsed && <span>GrowthOS</span>}
           </Link>
         </div>
-        <Nav showLabels={!collapsed} />
+        <Nav showLabels={!collapsed} user={user} />
         <div className="mt-3 flex flex-col gap-0.5">
           <ThemeToggle showLabel={!collapsed} />
           <Button
@@ -160,7 +186,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         {mobileOpen && (
           <div className="border-t px-3 pt-2 pb-3">
-            <Nav showLabels onNavigate={() => setMobileOpen(false)} />
+            <Nav showLabels user={user} onNavigate={() => setMobileOpen(false)} />
             <div className="mt-1">
               <ThemeToggle />
             </div>

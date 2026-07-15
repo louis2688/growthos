@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import type { Campaign, Channel } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const db = supabase();
+  const db = await createClient();
   const [{ data: campaigns }, { data: todos }, { data: channels }] = await Promise.all([
     db.from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false }),
     db.from("todos").select("campaign_id, status, priority, due_date"),

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateCampaign, type CampaignGen, type Intake } from "@/lib/generation";
-import { supabase } from "@/lib/supabase";
+import { createClient, currentUser } from "@/lib/supabase/server";
 import type { TodoPriority, TodoStatus } from "@/lib/types";
 
 export type CreateCampaignState = { error: string; values: Intake } | null;
@@ -56,13 +56,17 @@ export async function createCampaign(
     return { error: "Please fill in all required fields.", values: intake };
   }
 
+  const user = await currentUser();
+  if (!user) redirect("/login");
+
   let campaignId: string;
   try {
     const gen = await generateCampaign(intake);
-    const db = supabase();
+    const db = await createClient();
     const { data: campaign, error } = await db
       .from("campaigns")
       .insert({
+        user_id: user.id,
         title: gen.title,
         goal: intake.goal,
         product_name: intake.productName,
@@ -109,7 +113,7 @@ export type UpdateTodoInput = {
 
 export async function updateTodo(input: UpdateTodoInput): Promise<void> {
   const { id, campaign_id, ...fields } = input;
-  const db = supabase();
+  const db = await createClient();
   const { error } = await db.from("todos").update(fields).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath(`/campaigns/${campaign_id}`);
@@ -126,7 +130,7 @@ export type AddTodoInput = {
 };
 
 export async function addTodo(input: AddTodoInput): Promise<void> {
-  const db = supabase();
+  const db = await createClient();
   const { error } = await db.from("todos").insert({
     campaign_id: input.campaign_id,
     channel_id: input.channel_id,
@@ -143,7 +147,7 @@ export async function addTodo(input: AddTodoInput): Promise<void> {
 export async function regenerateCampaign(
   campaignId: string,
 ): Promise<{ error: string } | undefined> {
-  const db = supabase();
+  const db = await createClient();
   const { data: campaign } = await db
     .from("campaigns")
     .select("*")

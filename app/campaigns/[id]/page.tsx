@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import type { Campaign, Channel, Todo } from "@/lib/types";
 import Dashboard from "./dashboard";
 
@@ -9,7 +9,7 @@ export const maxDuration = 300;
 
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = supabase();
+  const db = await createClient();
   const { data: campaign } = await db.from("campaigns").select("*").eq("id", id).single();
   if (!campaign) notFound();
 
