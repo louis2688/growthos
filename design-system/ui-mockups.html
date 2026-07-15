@@ -1,0 +1,552 @@
+<title>GrowthOS UI Mockups</title>
+<style>
+  :root {
+    --primary: #7C3AED; --on-primary: #ffffff; --secondary: #6366F1; --accent: #EC4899;
+    --bg: #FAF5FF; --fg: #0F172A; --muted-fg: #5B5772; --surface: rgba(255,255,255,.72);
+    --surface-solid: #ffffff; --border: rgba(124,58,237,.14); --input-bg: rgba(255,255,255,.85);
+    --shadow: 0 8px 32px rgba(76,29,149,.10); --ok: #059669; --warn: #D97706; --danger: #DC2626;
+    --mesh-a: #ede4ff; --mesh-b: #ffe4f3; --mesh-c: #e4e9ff;
+    --heading: "Space Grotesk", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --body: "DM Sans", "Avenir", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12101c; --fg: #F3F0FB; --muted-fg: #A79FC4; --surface: rgba(30,25,52,.66);
+      --surface-solid: #201a38; --border: rgba(167,139,250,.18); --input-bg: rgba(22,18,40,.85);
+      --shadow: 0 8px 32px rgba(0,0,0,.42);
+      --mesh-a: #241b45; --mesh-b: #3b1230; --mesh-c: #14204a;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #FAF5FF; --fg: #0F172A; --muted-fg: #5B5772; --surface: rgba(255,255,255,.72);
+    --surface-solid: #ffffff; --border: rgba(124,58,237,.14); --input-bg: rgba(255,255,255,.85);
+    --shadow: 0 8px 32px rgba(76,29,149,.10);
+    --mesh-a: #ede4ff; --mesh-b: #ffe4f3; --mesh-c: #e4e9ff;
+  }
+  :root[data-theme="dark"] {
+    --bg: #12101c; --fg: #F3F0FB; --muted-fg: #A79FC4; --surface: rgba(30,25,52,.66);
+    --surface-solid: #201a38; --border: rgba(167,139,250,.18); --input-bg: rgba(22,18,40,.85);
+    --shadow: 0 8px 32px rgba(0,0,0,.42);
+    --mesh-a: #241b45; --mesh-b: #3b1230; --mesh-c: #14204a;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--body); color: var(--fg); background: var(--bg);
+    background-image: radial-gradient(60rem 40rem at 8% -10%, var(--mesh-a), transparent 60%),
+                      radial-gradient(50rem 36rem at 105% 15%, var(--mesh-b), transparent 55%),
+                      radial-gradient(46rem 40rem at 50% 115%, var(--mesh-c), transparent 55%);
+    background-attachment: fixed; min-height: 100dvh;
+  }
+  h1,h2,h3,h4 { font-family: var(--heading); margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  button { font: inherit; cursor: pointer; }
+  input { font: inherit; }
+  svg { flex: none; }
+
+  .page { max-width: 1160px; margin: 0 auto; padding: 28px 20px 80px; }
+  .masthead { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .masthead h1 { font-size: 22px; letter-spacing: -.01em; }
+  .masthead .note { font-size: 13px; color: var(--muted-fg); }
+  .wordmark { display: inline-flex; align-items: center; gap: 9px; font-family: var(--heading); font-weight: 700; }
+  .wordmark .mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--primary), var(--accent)); display: grid; place-items: center; color: #fff; }
+
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .tabs button {
+    border: 1px solid var(--border); background: var(--surface); color: var(--fg);
+    padding: 9px 16px; border-radius: 999px; font-weight: 500; font-size: 14px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: all .2s ease;
+  }
+  .tabs button:hover { border-color: var(--primary); }
+  .tabs button[aria-selected="true"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+  .tabs button:focus-visible, a:focus-visible, .btn:focus-visible, input:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary) 55%, transparent); outline-offset: 2px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .frame {
+    border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+    background: var(--surface); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+  }
+  .frame-bar { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .frame-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--border); display: inline-block; }
+  .frame-bar span { margin-left: 10px; font-size: 12px; color: var(--muted-fg); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 12px; padding: 11px 18px; font-weight: 600; font-size: 14px;
+    border: 1px solid transparent; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; min-height: 44px;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: var(--on-primary); box-shadow: 0 6px 18px rgba(124,58,237,.35); }
+  .btn-primary:hover { box-shadow: 0 8px 24px rgba(124,58,237,.45); }
+  .btn-ghost { background: var(--input-bg); border-color: var(--border); color: var(--fg); }
+  .btn-ghost:hover { border-color: var(--primary); }
+  .btn-danger-ghost { background: transparent; border-color: color-mix(in srgb, var(--danger) 35%, transparent); color: var(--danger); }
+
+  .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: var(--input-bg); color: var(--muted-fg); }
+  .pill-high { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); border-color: transparent; }
+  .pill-med  { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); border-color: transparent; }
+  .pill-low  { background: color-mix(in srgb, var(--muted-fg) 14%, transparent); color: var(--muted-fg); border-color: transparent; }
+  .pill-ok   { background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); border-color: transparent; }
+
+  .progress { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 12%, transparent); overflow: hidden; }
+  .progress i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
+
+  /* ---------- LOGIN ---------- */
+  .login { display: grid; grid-template-columns: 1.05fr 1fr; min-height: 620px; }
+  .login-brand { position: relative; padding: 44px; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(160deg, color-mix(in srgb, var(--primary) 88%, #000 0%) 0%, var(--secondary) 55%, var(--accent) 130%); color: #fff; }
+  .login-brand .headline { font-family: var(--heading); font-size: clamp(26px, 3.4vw, 38px); font-weight: 700; line-height: 1.15; letter-spacing: -.015em; max-width: 17ch; }
+  .login-brand .sub { margin-top: 14px; font-size: 15px; opacity: .85; max-width: 40ch; line-height: 1.55; }
+  .glass-quote { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); border-radius: 16px; padding: 18px 20px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .glass-quote strong { font-family: var(--heading); font-size: 20px; display: block; }
+  .glass-quote span { font-size: 13px; opacity: .85; }
+  .login-form { padding: 48px 44px; display: flex; flex-direction: column; justify-content: center; background: var(--surface); }
+  .login-form h2 { font-size: 24px; margin-bottom: 6px; }
+  .login-form .hint { color: var(--muted-fg); font-size: 14px; margin-bottom: 26px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .field input {
+    width: 100%; min-height: 46px; padding: 0 14px; border-radius: 12px; color: var(--fg);
+    border: 1px solid var(--border); background: var(--input-bg);
+  }
+  .field input:focus { border-color: var(--primary); }
+  .field .after { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--muted-fg); }
+  .field .after a { color: var(--primary); text-decoration: none; font-weight: 500; }
+  .divider { display: flex; align-items: center; gap: 12px; color: var(--muted-fg); font-size: 12px; margin: 20px 0; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .login-form .signup { margin-top: 24px; font-size: 14px; color: var(--muted-fg); text-align: center; }
+  .login-form .signup a { color: var(--primary); font-weight: 600; text-decoration: none; }
+
+  /* ---------- APP SHELL ---------- */
+  .shell { display: grid; grid-template-columns: 224px 1fr; min-height: 640px; }
+  .side { border-right: 1px solid var(--border); padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .side .wordmark { padding: 4px 10px 18px; }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 11px; font-size: 14px; font-weight: 500; color: var(--muted-fg); text-decoration: none; transition: background .15s ease; }
+  .nav-item:hover { background: color-mix(in srgb, var(--primary) 7%, transparent); }
+  .nav-item.active { background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--primary); }
+  .side .foot { margin-top: auto; border-top: 1px solid var(--border); padding-top: 12px; }
+  .main { padding: 26px 30px; min-width: 0; }
+  .main-head { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .main-head h2 { font-size: 22px; letter-spacing: -.01em; }
+  .main-head .grow { flex: 1; }
+  .search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--input-bg); border-radius: 12px; padding: 0 12px; min-height: 42px; color: var(--muted-fg); font-size: 14px; min-width: 200px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat { background: var(--surface-solid); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; }
+  .stat .k { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-fg); }
+  .stat .v { font-family: var(--heading); font-size: 28px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .stat .d { font-size: 12px; margin-top: 2px; }
+  .up { color: var(--ok); } .flat { color: var(--muted-fg); }
+
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .camp { background: var(--surface-solid); border: 1px solid var(--border); border-radius: 16px; padding: 18px; transition: box-shadow .2s ease, border-color .2s ease; cursor: pointer; }
+  .camp:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+  .camp h3 { font-size: 16px; margin-bottom: 3px; }
+  .camp .goal { font-size: 13px; color: var(--muted-fg); margin-bottom: 14px; }
+  .camp .meta { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 12px; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
+  .camp .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .camp.new { display: grid; place-items: center; border-style: dashed; color: var(--muted-fg); font-weight: 500; min-height: 150px; cursor: pointer; background: transparent; }
+  .camp.new:hover { color: var(--primary); }
+
+  /* ---------- CAMPAIGN DETAIL ---------- */
+  .detail-grid { display: grid; grid-template-columns: 1fr 260px; gap: 18px; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 14px; }
+  .filters button { border: 1px solid var(--border); background: var(--input-bg); color: var(--muted-fg); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 500; }
+  .filters button.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+  .todo { display: flex; gap: 12px; align-items: flex-start; background: var(--surface-solid); border: 1px solid var(--border); border-radius: 14px; padding: 13px 15px; margin-bottom: 9px; }
+  .todo:hover { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); }
+  .cb { width: 21px; height: 21px; border-radius: 7px; border: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); margin-top: 2px; flex: none; display: grid; place-items: center; background: transparent; }
+  .cb.done { background: linear-gradient(135deg, var(--primary), var(--accent)); border-color: transparent; color: #fff; }
+  .todo .t { font-size: 14px; font-weight: 500; }
+  .todo .t.done { text-decoration: line-through; color: var(--muted-fg); }
+  .todo .desc { font-size: 12.5px; color: var(--muted-fg); margin-top: 2px; line-height: 1.5; max-width: 62ch; }
+  .todo .rowmeta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .due { font-size: 12px; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
+  .rail { display: flex; flex-direction: column; gap: 14px; }
+  .rail-card { background: var(--surface-solid); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+  .rail-card h4 { font-size: 13px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-fg); margin-bottom: 12px; }
+  .ring-wrap { display: flex; align-items: center; gap: 14px; }
+  .ring-num { font-family: var(--heading); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ring-sub { font-size: 12px; color: var(--muted-fg); }
+  .ch-row { display: grid; grid-template-columns: 86px 1fr 28px; align-items: center; gap: 8px; font-size: 12.5px; margin-bottom: 9px; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
+  .ch-row .bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 10%, transparent); overflow: hidden; }
+  .ch-row .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--secondary), var(--accent)); border-radius: 999px; }
+
+  /* ---------- PROFILE ---------- */
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pcard { background: var(--surface-solid); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  .pcard h3 { font-size: 15px; margin-bottom: 16px; }
+  .avatar-row { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .avatar { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; display: grid; place-items: center; font-family: var(--heading); font-weight: 700; font-size: 18px; }
+  .avatar.sm { width: 36px; height: 36px; font-size: 13px; }
+  .avatar-row .n { font-weight: 600; }
+  .avatar-row .e { font-size: 13px; color: var(--muted-fg); }
+  .member { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+  .member:first-of-type { border-top: 0; }
+  .member .who { flex: 1; min-width: 0; }
+  .member .who .n { font-size: 14px; font-weight: 500; }
+  .member .who .e { font-size: 12px; color: var(--muted-fg); }
+  .usage-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted-fg); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+  .danger-zone { border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+  .danger-zone p { font-size: 13px; color: var(--muted-fg); margin-bottom: 14px; line-height: 1.5; }
+  .full { grid-column: 1 / -1; }
+
+  @media (max-width: 900px) {
+    .login { grid-template-columns: 1fr; } .login-brand { display: none; }
+    .shell { grid-template-columns: 1fr; } .side { flex-direction: row; align-items: center; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--border); padding: 10px; }
+    .side .wordmark { padding: 0 8px; } .side .foot { display: none; } .nav-item span { display: none; }
+    .stats, .cards, .detail-grid, .profile-grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <div class="masthead">
+    <span class="wordmark"><span class="mark">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+    </span>GrowthOS</span>
+    <h1>UI Mockups — v2 direction</h1>
+    <span class="note">Glassmorphism · Space Grotesk + DM Sans · AI purple #7C3AED / pink #EC4899 · light &amp; dark</span>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-s="login">1 · Login</button>
+    <button role="tab" aria-selected="false" data-s="dash">2 · Dashboard</button>
+    <button role="tab" aria-selected="false" data-s="detail">3 · Campaign detail</button>
+    <button role="tab" aria-selected="false" data-s="profile">4 · Profile &amp; settings</button>
+  </div>
+
+  <!-- ============ LOGIN ============ -->
+  <section class="screen active" id="s-login">
+    <div class="frame">
+      <div class="frame-bar"><i></i><i></i><i></i><span>growthos.app/login</span></div>
+      <div class="login">
+        <div class="login-brand">
+          <span class="wordmark" style="color:#fff"><span class="mark" style="background:rgba(255,255,255,.2)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+          </span>GrowthOS</span>
+          <div>
+            <p class="headline">Type a goal. Get a growth campaign.</p>
+            <p class="sub">AI turns "1,000 signups in 45 days" into channels, prioritized todos, and tool picks — in about two minutes.</p>
+          </div>
+          <div class="glass-quote">
+            <strong>20 todos · 5 channels</strong>
+            <span>generated for "Launch PitchPolish" — from goal to plan in 1m 48s</span>
+          </div>
+        </div>
+        <div class="login-form">
+          <h2>Welcome back</h2>
+          <p class="hint">Log in to your growth workspace.</p>
+          <div class="field">
+            <label for="m-email">Email</label>
+            <input id="m-email" type="email" autocomplete="email" placeholder="you@startup.com">
+          </div>
+          <div class="field">
+            <label for="m-pass">Password</label>
+            <input id="m-pass" type="password" autocomplete="current-password" placeholder="••••••••••">
+            <div class="after"><span></span><a href="#">Forgot password?</a></div>
+          </div>
+          <button class="btn btn-primary">Log in</button>
+          <div class="divider">or</div>
+          <button class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            Email me a magic link
+          </button>
+          <p class="signup">New here? <a href="#">Create your workspace</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="screen" id="s-dash">
+    <div class="frame">
+      <div class="frame-bar"><i></i><i></i><i></i><span>growthos.app — Campaigns</span></div>
+      <div class="shell">
+        <aside class="side">
+          <span class="wordmark"><span class="mark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+          </span>GrowthOS</span>
+          <a class="nav-item active" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2.5-7.5L3 11z"/></svg>
+            <span>Campaigns</span></a>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a5 5 0 1 0-5.4 8.1L4 19.7V22h4l6.3-6.3a5 5 0 0 0 .4-9.4z"/></svg>
+            <span>Toolbox</span></a>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx=".8"/><rect x="12" y="8" width="3" height="10" rx=".8"/><rect x="17" y="5" width="3" height="13" rx=".8"/></svg>
+            <span>Analytics</span></a>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Settings</span></a>
+          <div class="foot">
+            <a class="nav-item" href="#"><span class="avatar sm">L</span><span>Louis M.</span></a>
+          </div>
+        </aside>
+        <div class="main">
+          <div class="main-head">
+            <h2>Campaigns</h2>
+            <div class="grow"></div>
+            <div class="search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              Search campaigns…
+            </div>
+            <button class="btn btn-primary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              New Campaign
+            </button>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><div class="k">Active campaigns</div><div class="v">2</div><div class="d flat">across 8 channels</div></div>
+            <div class="stat"><div class="k">Todos done this week</div><div class="v">11</div><div class="d up">▲ 4 vs last week</div></div>
+            <div class="stat"><div class="k">Due in next 7 days</div><div class="v">6</div><div class="d flat">3 high priority</div></div>
+          </div>
+
+          <div class="cards">
+            <div class="camp">
+              <h3>Launch PitchPolish: 1,000 Founders in 45 Days</h3>
+              <p class="goal">1,000 signups in 45 days</p>
+              <div class="progress"><i style="width:35%"></i></div>
+              <div class="meta"><span>7/20 done · 35%</span><span>due Aug 16</span></div>
+              <div class="chips">
+                <span class="chip">LinkedIn</span><span class="chip">Product Hunt</span><span class="chip">Reddit</span><span class="chip">SEO</span><span class="chip">X</span>
+              </div>
+            </div>
+            <div class="camp">
+              <h3>Launch FocusFlow</h3>
+              <p class="goal">5,000 downloads in 60 days</p>
+              <div class="progress"><i style="width:17%"></i></div>
+              <div class="meta"><span>1/6 done · 17%</span><span>due Jul 29</span></div>
+              <div class="chips">
+                <span class="chip">TikTok</span><span class="chip">Reddit</span><span class="chip">Product Hunt</span>
+              </div>
+            </div>
+            <div class="camp new">+ &nbsp;Start a new campaign — describe your goal</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CAMPAIGN DETAIL ============ -->
+  <section class="screen" id="s-detail">
+    <div class="frame">
+      <div class="frame-bar"><i></i><i></i><i></i><span>growthos.app — Launch PitchPolish</span></div>
+      <div class="shell">
+        <aside class="side">
+          <span class="wordmark"><span class="mark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+          </span>GrowthOS</span>
+          <a class="nav-item active" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2.5-7.5L3 11z"/></svg>
+            <span>Campaigns</span></a>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a5 5 0 1 0-5.4 8.1L4 19.7V22h4l6.3-6.3a5 5 0 0 0 .4-9.4z"/></svg>
+            <span>Toolbox</span></a>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx=".8"/><rect x="12" y="8" width="3" height="10" rx=".8"/><rect x="17" y="5" width="3" height="13" rx=".8"/></svg>
+            <span>Analytics</span></a>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Settings</span></a>
+          <div class="foot">
+            <a class="nav-item" href="#"><span class="avatar sm">L</span><span>Louis M.</span></a>
+          </div>
+        </aside>
+        <div class="main">
+          <div class="main-head">
+            <div>
+              <h2>Launch PitchPolish: 1,000 Founders in 45 Days</h2>
+              <p style="color:var(--muted-fg); font-size:13.5px; margin-top:4px">Goal: 1,000 signups in 45 days · created Jul 15</p>
+            </div>
+            <div class="grow"></div>
+            <button class="btn btn-ghost">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>
+              Regenerate
+            </button>
+            <button class="btn btn-primary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Add todo
+            </button>
+          </div>
+
+          <div class="detail-grid">
+            <div>
+              <div class="filters">
+                <button class="on">All · 20</button><button>LinkedIn · 4</button><button>Product Hunt · 4</button><button>Reddit · 4</button><button>SEO · 5</button><button>X (Twitter) · 3</button>
+              </div>
+
+              <div class="todo">
+                <span class="cb done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>
+                <div>
+                  <p class="t done">Set up analytics and signup tracking</p>
+                  <div class="rowmeta"><span class="chip">SEO</span><span class="chip pill-high">high</span><span class="chip">Web Analytics Tool</span><span class="due">done Jul 17</span></div>
+                </div>
+              </div>
+              <div class="todo">
+                <span class="cb"></span>
+                <div>
+                  <p class="t">Build a high-converting landing page</p>
+                  <p class="desc">Focused page showing before/after deck transformations with a clear signup CTA and social proof.</p>
+                  <div class="rowmeta"><span class="chip">SEO</span><span class="chip pill-high">high</span><span class="chip">Landing Page Builder</span><span class="chip pill-ok">in progress</span><span class="due">due Jul 18</span></div>
+                </div>
+              </div>
+              <div class="todo">
+                <span class="cb"></span>
+                <div>
+                  <p class="t">Prepare Product Hunt launch assets</p>
+                  <p class="desc">Gallery images, GIF demo, tagline, first comment, and maker story — a complete draft launch kit.</p>
+                  <div class="rowmeta"><span class="chip">Product Hunt</span><span class="chip pill-high">high</span><span class="chip">Design Tool</span><span class="due">due Jul 22</span></div>
+                </div>
+              </div>
+              <div class="todo">
+                <span class="cb"></span>
+                <div>
+                  <p class="t">Write value-first Reddit posts</p>
+                  <p class="desc">Free pitch-deck teardown in r/startups, r/Entrepreneur, r/ycombinator — no hard selling.</p>
+                  <div class="rowmeta"><span class="chip">Reddit</span><span class="chip pill-high">high</span><span class="chip">Community Engagement Tool</span><span class="due">due Jul 24</span></div>
+                </div>
+              </div>
+              <div class="todo">
+                <span class="cb"></span>
+                <div>
+                  <p class="t">Do keyword research for fundraising terms</p>
+                  <div class="rowmeta"><span class="chip">SEO</span><span class="chip pill-med">medium</span><span class="chip">Keyword Research Tool</span><span class="due">due Jul 25</span></div>
+                </div>
+              </div>
+              <div class="todo">
+                <span class="cb"></span>
+                <div>
+                  <p class="t">Run a small X promoted-post test</p>
+                  <div class="rowmeta"><span class="chip">X (Twitter)</span><span class="chip pill-low">low</span><span class="chip">Ad Manager</span><span class="due">due Aug 12</span></div>
+                </div>
+              </div>
+            </div>
+
+            <aside class="rail">
+              <div class="rail-card">
+                <h4>Progress</h4>
+                <div class="ring-wrap">
+                  <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="35 percent complete">
+                    <circle cx="32" cy="32" r="26" fill="none" stroke="var(--border)" stroke-width="8"/>
+                    <circle cx="32" cy="32" r="26" fill="none" stroke="var(--primary)" stroke-width="8" stroke-linecap="round" stroke-dasharray="57 163" transform="rotate(-90 32 32)"/>
+                  </svg>
+                  <div><div class="ring-num">7/20</div><div class="ring-sub">todos done · 35%</div></div>
+                </div>
+              </div>
+              <div class="rail-card">
+                <h4>By channel</h4>
+                <div class="ch-row"><span>SEO</span><span class="bar"><i style="width:60%"></i></span><span>3/5</span></div>
+                <div class="ch-row"><span>LinkedIn</span><span class="bar"><i style="width:50%"></i></span><span>2/4</span></div>
+                <div class="ch-row"><span>Product Hunt</span><span class="bar"><i style="width:25%"></i></span><span>1/4</span></div>
+                <div class="ch-row"><span>Reddit</span><span class="bar"><i style="width:25%"></i></span><span>1/4</span></div>
+                <div class="ch-row"><span>X (Twitter)</span><span class="bar"><i style="width:0%"></i></span><span>0/3</span></div>
+              </div>
+              <div class="rail-card">
+                <h4>Next up</h4>
+                <p style="font-size:13.5px; font-weight:500">Build a high-converting landing page</p>
+                <p style="font-size:12px; color:var(--muted-fg); margin-top:4px">Due tomorrow · everything else on the SEO track waits on this.</p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROFILE ============ -->
+  <section class="screen" id="s-profile">
+    <div class="frame">
+      <div class="frame-bar"><i></i><i></i><i></i><span>growthos.app — Settings</span></div>
+      <div class="shell">
+        <aside class="side">
+          <span class="wordmark"><span class="mark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+          </span>GrowthOS</span>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2.5-7.5L3 11z"/></svg>
+            <span>Campaigns</span></a>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a5 5 0 1 0-5.4 8.1L4 19.7V22h4l6.3-6.3a5 5 0 0 0 .4-9.4z"/></svg>
+            <span>Toolbox</span></a>
+          <a class="nav-item" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx=".8"/><rect x="12" y="8" width="3" height="10" rx=".8"/><rect x="17" y="5" width="3" height="13" rx=".8"/></svg>
+            <span>Analytics</span></a>
+          <a class="nav-item active" href="#">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Settings</span></a>
+          <div class="foot">
+            <a class="nav-item active" href="#"><span class="avatar sm">L</span><span>Louis M.</span></a>
+          </div>
+        </aside>
+        <div class="main">
+          <div class="main-head"><h2>Profile &amp; settings</h2></div>
+          <div class="profile-grid">
+            <div class="pcard">
+              <h3>Account</h3>
+              <div class="avatar-row">
+                <span class="avatar">L</span>
+                <div>
+                  <div class="n">Louis Madrigal</div>
+                  <div class="e">louismadrigal26@gmail.com</div>
+                </div>
+              </div>
+              <div class="field">
+                <label for="p-name">Display name</label>
+                <input id="p-name" type="text" value="Louis Madrigal">
+              </div>
+              <button class="btn btn-ghost">Save changes</button>
+            </div>
+
+            <div class="pcard">
+              <h3>Workspace members</h3>
+              <div class="member">
+                <span class="avatar sm">L</span>
+                <div class="who"><div class="n">Louis Madrigal</div><div class="e">louismadrigal26@gmail.com</div></div>
+                <span class="chip pill-med">Owner</span>
+              </div>
+              <div class="member">
+                <span class="avatar sm" style="background:linear-gradient(135deg, var(--secondary), var(--ok))">D</span>
+                <div class="who"><div class="n">John Dave Decano</div><div class="e">johndavedecano@gmail.com</div></div>
+                <span class="chip">Collaborator</span>
+              </div>
+              <button class="btn btn-ghost" style="margin-top:12px">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                Invite member
+              </button>
+            </div>
+
+            <div class="pcard">
+              <h3>AI usage this month</h3>
+              <div class="usage-row"><span>Campaign generations</span><span>14 / 50</span></div>
+              <div class="progress" style="margin-bottom:16px"><i style="width:28%"></i></div>
+              <div class="usage-row"><span>Regenerations</span><span>3 / 20</span></div>
+              <div class="progress"><i style="width:15%"></i></div>
+              <p style="font-size:12px; color:var(--muted-fg); margin-top:14px">Resets Aug 1 · Free plan — upgrade for unlimited generations.</p>
+            </div>
+
+            <div class="pcard danger-zone">
+              <h3 style="color:var(--danger)">Danger zone</h3>
+              <p>Deleting your workspace removes all campaigns, channels, and todos permanently. This cannot be undone.</p>
+              <button class="btn btn-danger-ghost">Delete workspace…</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tabs [role="tab"]');
+  const screens = { login: document.getElementById('s-login'), dash: document.getElementById('s-dash'),
+                    detail: document.getElementById('s-detail'), profile: document.getElementById('s-profile') };
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.setAttribute('aria-selected', x === t ? 'true' : 'false'));
+    Object.entries(screens).forEach(([k, el]) => el.classList.toggle('active', k === t.dataset.s));
+  }));
+</script>
