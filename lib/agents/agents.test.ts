@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GoalAnalysisSchema } from "./goal-analyzer";
 import { ChannelResearchSchema } from "./channel-research";
 import { CampaignPlanSchema } from "./campaign-generator";
+import { ToolRecommendationSchema, recommendTools } from "./tool-recommender";
 
 describe("GoalAnalysisSchema", () => {
   const valid = {
@@ -113,5 +114,41 @@ describe("CampaignPlanSchema", () => {
   it("rejects a negative channel_index", () => {
     const bad = { plans: [{ ...valid.plans[0], channel_index: -1 }] };
     expect(CampaignPlanSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("ToolRecommendationSchema", () => {
+  const valid = {
+    tools: [{ tool_index: 0, reason: "Drafts the post in subreddit tone.", confidence: "high" }],
+    todo_tools: [{ todo_index: 1, tool_index: 0 }],
+  };
+
+  it("accepts a valid recommendation", () => {
+    expect(ToolRecommendationSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("accepts an empty recommendation — no tool fits is a valid answer", () => {
+    expect(ToolRecommendationSchema.safeParse({ tools: [], todo_tools: [] }).success).toBe(true);
+  });
+
+  it("rejects more than 4 suggested tools", () => {
+    const bad = { ...valid, tools: [0, 1, 2, 3, 4].map((i) => ({ ...valid.tools[0], tool_index: i })) };
+    expect(ToolRecommendationSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it("rejects an invalid confidence value", () => {
+    const bad = { ...valid, tools: [{ ...valid.tools[0], confidence: "certain" }] };
+    expect(ToolRecommendationSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("recommendTools", () => {
+  it("short-circuits on an empty catalog without calling the model", async () => {
+    const rec = await recommendTools({
+      plan: { title: "T", objective: "o", channel: "c", platform: "p" },
+      todos: [{ title: "t", description: "d" }],
+      catalog: [],
+    });
+    expect(rec).toEqual({ tools: [], todo_tools: [] });
   });
 });

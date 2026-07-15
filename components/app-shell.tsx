@@ -30,9 +30,13 @@ function Mark() {
   );
 }
 
-// ponytail: Toolbox/Analytics/Settings/Profile ship with v2 auth — visible roadmap, not dead links.
+const navItems = [
+  { label: "Campaigns", href: "/", icon: Rocket },
+  { label: "Toolbox", href: "/toolbox", icon: Wrench },
+];
+
+// ponytail: Analytics/Settings aren't built — visible roadmap, not dead links.
 const soonItems = [
-  { label: "Toolbox", icon: Wrench },
   { label: "Analytics", icon: BarChart3 },
   { label: "Settings", icon: Settings },
 ];
@@ -47,24 +51,29 @@ function Nav({
   user: { email: string; name: string; initial: string };
 }) {
   const pathname = usePathname();
-  const campaignsActive =
-    pathname === "/" || pathname.startsWith("/campaigns") || pathname === "/new";
+  const isActive = (href: string) =>
+    href === "/"
+      ? pathname === "/" || pathname.startsWith("/campaigns") || pathname === "/new"
+      : pathname.startsWith(href);
 
   return (
     <nav className="flex flex-1 flex-col gap-1">
-      <Link
-        href="/"
-        onClick={onNavigate}
-        title="Campaigns"
-        className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-          campaignsActive
-            ? "bg-primary/12 text-primary"
-            : "text-muted-foreground hover:bg-primary/6"
-        } ${showLabels ? "" : "justify-center px-0"}`}
-      >
-        <Rocket className="size-4 flex-none" aria-hidden />
-        {showLabels && <span>Campaigns</span>}
-      </Link>
+      {navItems.map(({ label, href, icon: Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          onClick={onNavigate}
+          title={label}
+          className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+            isActive(href)
+              ? "bg-primary/12 text-primary"
+              : "text-muted-foreground hover:bg-primary/6"
+          } ${showLabels ? "" : "justify-center px-0"}`}
+        >
+          <Icon className="size-4 flex-none" aria-hidden />
+          {showLabels && <span>{label}</span>}
+        </Link>
+      ))}
       {soonItems.map(({ label, icon: Icon }) => (
         <span
           key={label}

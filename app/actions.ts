@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { analyzeGoal } from "@/lib/agents/goal-analyzer";
 import { researchChannels } from "@/lib/agents/channel-research";
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
+import { recommendTools } from "@/lib/agents/tool-recommender";
 import { createClient, currentUser } from "@/lib/supabase/server";
-import type { Channel, Goal, Priority, TodoStatus } from "@/lib/types";
+import type { Channel, Goal, Priority, Tool, TodoStatus } from "@/lib/types";
 
 function isoDateInDays(days: number): string {
   return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
@@ -72,10 +73,10 @@ export async function startCampaign(
   }
 
   revalidatePath("/");
-  redirect(`/campaigns/${campaignId}/review`);
+  redirect(`/campaigns/${campaignId}/analysis`);
 }
 
-/* ---------- Step 2: /review — confirm goal, research channels ---------- */
+/* ---------- Step 2: /analysis — confirm goal, research channels ---------- */
 
 export type ConfirmGoalState = { error: string } | null;
 
@@ -142,16 +143,65 @@ export async function confirmGoal(
   redirect(`/campaigns/${campaignId}/channels`);
 }
 
-/* ---------- Step 3: /channels — select, then generate plans ---------- */
+/* ---------- Step 3: /channels — select, generate plans, todos and tool suggestions ---------- */
 
 export type GeneratePlansState = { error: string } | null;
+
+/**
+ * Tool Recommender, once per plan (campaign-agent-mastra.html `.foreach(plan)`).
+ * Best-effort: a plan whose suggestions fail keeps its todos and simply shows no
+ * tools, rather than discarding a good generation over an enhancement.
+ */
+async function suggestToolsForPlan(
+  db: Awaited<ReturnType<typeof createClient>>,
+  plan: { id: string; title: string; objective: string; channel: string; platform: string },
+  todos: { id: string; title: string; description: string }[],
+  catalog: Pick<Tool, "id" | "name" | "category" | "description">[],
+): Promise<void> {
+  try {
+    const rec = await recommendTools({
+      plan,
+      todos: todos.map((t) => ({ title: t.title, description: t.description })),
+      catalog: catalog.map((t) => ({
+        name: t.name,
+        category: t.category,
+        description: t.description,
+      })),
+    });
+
+    if (rec.tools.length > 0) {
+      await db.from("plan_tools").insert(
+        rec.tools.map((t) => ({
+          plan_id: plan.id,
+          tool_id: catalog[t.tool_index].id,
+          reason: t.reason,
+        })),
+      );
+    }
+    // Last assignment wins if the model names a todo twice.
+    for (const a of rec.todo_tools) {
+      await db
+        .from("todos")
+        .update({ tool_id: catalog[a.tool_index].id })
+        .eq("id", todos[a.todo_index].id);
+    }
+  } catch (err) {
+    console.error(`tool recommendation failed for plan ${plan.id}:`, err);
+  }
+}
+
+type PlanForTools = Parameters<typeof suggestToolsForPlan>[1];
+type TodosForTools = Parameters<typeof suggestToolsForPlan>[2];
 
 async function insertPlansAndTodos(
   db: Awaited<ReturnType<typeof createClient>>,
   campaignId: string,
   selected: Channel[],
   plans: Awaited<ReturnType<typeof generateCampaignPlan>>["plans"],
+  catalog: Pick<Tool, "id" | "name" | "category" | "description">[],
 ): Promise<void> {
+  const created: { plan: PlanForTools; todos: TodosForTools }[] = [];
+
   for (const p of plans) {
     const channel = selected[p.channel_index];
     const { data: plan, error: planErr } = await db
@@ -167,20 +217,48 @@ async function insertPlansAndTodos(
       .single();
     if (planErr || !plan) throw new Error(planErr?.message ?? "plan insert failed");
 
-    const { error: tdErr } = await db.from("todos").insert(
-      p.todos.map((t) => ({
-        campaign_id: campaignId,
-        plan_id: plan.id,
-        title: t.title,
-        description: t.description,
-        priority: t.priority,
-        estimated_time: t.estimated_time ?? null,
-        output: t.output ?? null,
-        due_date: t.due_in_days != null ? isoDateInDays(t.due_in_days) : null,
-      })),
-    );
-    if (tdErr) throw new Error(tdErr.message);
+    const { data: todos, error: tdErr } = await db
+      .from("todos")
+      .insert(
+        p.todos.map((t) => ({
+          campaign_id: campaignId,
+          plan_id: plan.id,
+          title: t.title,
+          description: t.description,
+          priority: t.priority,
+          estimated_time: t.estimated_time ?? null,
+          output: t.output ?? null,
+          due_date: t.due_in_days != null ? isoDateInDays(t.due_in_days) : null,
+        })),
+      )
+      .select("id, title, description");
+    if (tdErr || !todos) throw new Error(tdErr?.message ?? "todo insert failed");
+
+    created.push({
+      plan: {
+        id: plan.id,
+        title: p.title,
+        objective: p.objective,
+        channel: channel.name,
+        platform: channel.platform,
+      },
+      todos,
+    });
   }
+
+  await Promise.all(created.map(({ plan, todos }) => suggestToolsForPlan(db, plan, todos, catalog)));
+}
+
+async function activeCatalog(
+  db: Awaited<ReturnType<typeof createClient>>,
+): Promise<Pick<Tool, "id" | "name" | "category" | "description">[]> {
+  // Disabled tools are never suggested.
+  const { data } = await db
+    .from("tools")
+    .select("id, name, category, description")
+    .neq("status", "disabled")
+    .order("name");
+  return (data ?? []) as Pick<Tool, "id" | "name" | "category" | "description">[];
 }
 
 export async function generatePlans(
@@ -194,10 +272,11 @@ export async function generatePlans(
   }
 
   const db = await createClient();
-  const [{ data: campaign }, { data: goal }, { data: channels }] = await Promise.all([
+  const [{ data: campaign }, { data: goal }, { data: channels }, catalog] = await Promise.all([
     db.from("campaigns").select("id, name, description").eq("id", campaignId).single(),
     db.from("goals").select("*").eq("campaign_id", campaignId).single(),
     db.from("channels").select("*").eq("campaign_id", campaignId),
+    activeCatalog(db),
   ]);
   if (!campaign || !goal || !channels?.length) return { error: "Campaign not found." };
 
@@ -217,11 +296,12 @@ export async function generatePlans(
     await db.from("channels").update({ selected: true }).in("id", selectedIds);
     await db.from("plans").delete().eq("campaign_id", campaignId);
 
-    await insertPlansAndTodos(db, campaignId, selected, result.plans);
+    await insertPlansAndTodos(db, campaignId, selected, result.plans, catalog);
 
+    // Not live yet — the user reviews the generated plans before they commit.
     const { error: stErr } = await db
       .from("campaigns")
-      .update({ status: "active", updated_at: new Date().toISOString() })
+      .update({ status: "reviewing", updated_at: new Date().toISOString() })
       .eq("id", campaignId);
     if (stErr) throw new Error(stErr.message);
   } catch (err) {
@@ -232,19 +312,46 @@ export async function generatePlans(
   }
 
   revalidatePath("/");
+  redirect(`/campaigns/${campaignId}/review`);
+}
+
+/* ---------- Step 4: /review — commit the generated campaign ---------- */
+
+export async function confirmCampaign(campaignId: string): Promise<{ error: string } | undefined> {
+  const db = await createClient();
+  const { error } = await db
+    .from("campaigns")
+    .update({ status: "active", updated_at: new Date().toISOString() })
+    .eq("id", campaignId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
   redirect(`/campaigns/${campaignId}`);
 }
 
-/* ---------- Regenerate: re-run plan generation from saved goal + selection ---------- */
+/** Step back to channel selection; the draft plans stay until the next generate replaces them. */
+export async function backToChannels(campaignId: string): Promise<{ error: string } | undefined> {
+  const db = await createClient();
+  const { error } = await db
+    .from("campaigns")
+    .update({ status: "researching", updated_at: new Date().toISOString() })
+    .eq("id", campaignId);
+  if (error) return { error: error.message };
+
+  redirect(`/campaigns/${campaignId}/channels`);
+}
+
+/* ---------- Regenerate: re-run generation from saved goal + selection ---------- */
 
 export async function regenerateCampaign(
   campaignId: string,
 ): Promise<{ error: string } | undefined> {
   const db = await createClient();
-  const [{ data: campaign }, { data: goal }, { data: channels }] = await Promise.all([
+  const [{ data: campaign }, { data: goal }, { data: channels }, catalog] = await Promise.all([
     db.from("campaigns").select("id, name, description").eq("id", campaignId).single(),
     db.from("goals").select("*").eq("campaign_id", campaignId).single(),
     db.from("channels").select("*").eq("campaign_id", campaignId).eq("selected", true),
+    activeCatalog(db),
   ]);
   if (!campaign || !goal) return { error: "Campaign not found." };
   const selected = (channels ?? []) as Channel[];
@@ -260,7 +367,7 @@ export async function regenerateCampaign(
     });
 
     await db.from("plans").delete().eq("campaign_id", campaignId);
-    await insertPlansAndTodos(db, campaignId, selected, result.plans);
+    await insertPlansAndTodos(db, campaignId, selected, result.plans, catalog);
   } catch (err) {
     console.error("regenerateCampaign failed:", err);
     revalidatePath(`/campaigns/${campaignId}`);
@@ -285,6 +392,7 @@ export type UpdateTodoInput = {
   estimated_time?: string | null;
   due_date?: string | null;
   plan_id?: string;
+  tool_id?: string | null;
 };
 
 export async function updateTodo(input: UpdateTodoInput): Promise<void> {
@@ -303,6 +411,7 @@ export type AddTodoInput = {
   priority?: Priority;
   estimated_time?: string | null;
   due_date?: string | null;
+  tool_id?: string | null;
 };
 
 export async function addTodo(input: AddTodoInput): Promise<void> {
@@ -315,6 +424,7 @@ export async function addTodo(input: AddTodoInput): Promise<void> {
     priority: input.priority ?? "medium",
     estimated_time: input.estimated_time ?? null,
     due_date: input.due_date ?? null,
+    tool_id: input.tool_id ?? null,
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/campaigns/${input.campaign_id}`);

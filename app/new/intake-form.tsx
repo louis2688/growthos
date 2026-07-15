@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { WizardStepper } from "@/components/wizard-stepper";
 
 export default function IntakeForm() {
   const [state, formAction, pending] = useActionState(startCampaign, null);
@@ -19,12 +20,13 @@ export default function IntakeForm() {
           ← All campaigns
         </Link>
       </div>
+      <WizardStepper current={1} />
       <Card className="glass rounded-2xl shadow-lg shadow-primary/5">
         <CardHeader>
           <CardTitle className="font-heading text-2xl">New campaign</CardTitle>
           <CardDescription>
-            Step 1 of 3 — tell the AI your goal. It analyzes it, researches channels, and you
-            pick which to pursue.
+            Tell the AI your goal. It analyzes it, researches channels, and you pick which to
+            pursue.
           </CardDescription>
         </CardHeader>
         <CardContent>

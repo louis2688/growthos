@@ -1,11 +1,10 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { wizardStep, type Campaign, type Goal } from "@/lib/types";
-import ReviewForm from "./review-form";
+import { guardStep } from "@/lib/wizard";
+import type { Campaign, Channel, Goal, Plan, PlanTool, Todo, Tool } from "@/lib/types";
+import ReviewPreview from "./review-preview";
 
 export const dynamic = "force-dynamic";
-// Channel research (web search) runs from this page's server action.
-export const maxDuration = 300;
 
 export default async function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,12 +12,37 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
   const { data: campaign } = await db.from("campaigns").select("*").eq("id", id).single();
   if (!campaign) notFound();
 
-  const step = wizardStep((campaign as Campaign).status);
-  if (step === "channels") redirect(`/campaigns/${id}/channels`);
-  if (step === "dashboard") redirect(`/campaigns/${id}`);
+  guardStep(id, (campaign as Campaign).status, "review");
 
-  const { data: goal } = await db.from("goals").select("*").eq("campaign_id", id).single();
+  const [{ data: goal }, { data: channels }, { data: plans }, { data: todos }, { data: tools }] =
+    await Promise.all([
+      db.from("goals").select("*").eq("campaign_id", id).single(),
+      db.from("channels").select("*").eq("campaign_id", id).eq("selected", true),
+      db.from("plans").select("*").eq("campaign_id", id),
+      db
+        .from("todos")
+        .select("*")
+        .eq("campaign_id", id)
+        .order("due_date", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: true }),
+      db.from("tools").select("*"),
+    ]);
   if (!goal) notFound();
 
-  return <ReviewForm campaign={campaign as Campaign} goal={goal as Goal} />;
+  const planIds = ((plans ?? []) as Plan[]).map((p) => p.id);
+  const { data: planTools } = planIds.length
+    ? await db.from("plan_tools").select("*").in("plan_id", planIds)
+    : { data: [] };
+
+  return (
+    <ReviewPreview
+      campaign={campaign as Campaign}
+      goal={goal as Goal}
+      channels={(channels ?? []) as Channel[]}
+      plans={(plans ?? []) as Plan[]}
+      todos={(todos ?? []) as Todo[]}
+      tools={(tools ?? []) as Tool[]}
+      planTools={(planTools ?? []) as PlanTool[]}
+    />
+  );
 }

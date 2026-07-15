@@ -2,11 +2,17 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
+import { stepPath } from "@/lib/wizard";
 import { wizardStep, type Campaign, type Channel, type Goal } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const stepLabel = { review: "Resume — review goal", channels: "Resume — pick channels" } as const;
+const stepLabel = {
+  analysis: "Resume — review goal",
+  channels: "Resume — pick channels",
+  review: "Resume — review plans",
+  dashboard: "Open",
+} as const;
 
 export default async function Home() {
   const db = await createClient();
@@ -42,7 +48,7 @@ export default async function Home() {
 
   const all = (campaigns ?? []) as Campaign[];
   const active = all.filter((c) => c.status === "active");
-  const inProgress = all.filter((c) => c.status === "draft" || c.status === "researching");
+  const inProgress = all.filter((c) => c.status !== "active");
 
   const allTodos = todos ?? [];
   const doneCount = allTodos.filter((t) => t.status === "done").length;
@@ -85,9 +91,9 @@ export default async function Home() {
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {inProgress.map((c) => {
-              const step = wizardStep(c.status) as "review" | "channels";
+              const step = wizardStep(c.status);
               return (
-                <Link key={c.id} href={`/campaigns/${c.id}/${step}`}>
+                <Link key={c.id} href={stepPath(c.id, step)}>
                   <div className="glass h-full rounded-2xl border border-dashed p-4 transition-all hover:border-primary">
                     <h3 className="font-heading text-base font-semibold">{c.name}</h3>
                     <p className="mt-0.5 text-sm text-muted-foreground">{c.description}</p>

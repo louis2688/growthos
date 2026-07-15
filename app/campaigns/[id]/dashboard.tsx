@@ -16,9 +16,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { Campaign, Channel, Goal, Plan, Priority, Todo } from "@/lib/types";
+import type {
+  Campaign,
+  Channel,
+  Goal,
+  Plan,
+  PlanStatus,
+  PlanTool,
+  Priority,
+  Todo,
+  Tool,
+} from "@/lib/types";
 import { AddTodoDialog, EditTodoDialog } from "./todo-dialogs";
 
 const priorityPill: Record<Priority, string> = {
@@ -26,6 +36,14 @@ const priorityPill: Record<Priority, string> = {
   medium: "border-transparent bg-primary/10 text-primary",
   low: "border-transparent bg-muted-foreground/15 text-muted-foreground",
 };
+
+const planStatusPill: Record<PlanStatus, string> = {
+  active: "border-transparent bg-emerald-600/10 text-emerald-600 dark:text-emerald-400",
+  planned: "border-transparent bg-muted-foreground/15 text-muted-foreground",
+  archived: "border-transparent bg-muted-foreground/15 text-muted-foreground line-through",
+};
+
+const toolTag = "border-emerald-600/40 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400";
 
 const priorityRank: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 
@@ -35,12 +53,16 @@ export default function Dashboard({
   channels,
   plans,
   todos,
+  tools,
+  planTools,
 }: {
   campaign: Campaign;
   goal: Goal;
   channels: Channel[];
   plans: Plan[];
   todos: Todo[];
+  tools: Tool[];
+  planTools: PlanTool[];
 }) {
   const router = useRouter();
   const [activeChannel, setActiveChannel] = useState<string>("all");
@@ -50,6 +72,7 @@ export default function Dashboard({
   const [regenError, setRegenError] = useState<string | null>(null);
 
   const channelName = new Map(channels.map((c) => [c.id, c.name]));
+  const toolById = new Map(tools.map((t) => [t.id, t]));
   const todosByPlan = new Map<string, Todo[]>();
   for (const t of todos) {
     todosByPlan.set(t.plan_id, [...(todosByPlan.get(t.plan_id) ?? []), t]);
@@ -86,6 +109,12 @@ export default function Dashboard({
           <p className="mt-1 text-muted-foreground">{goalLine}</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href={`/campaigns/${campaign.id}/board`}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Board
+          </Link>
           <AlertDialog>
             <AlertDialogTrigger
               render={<Button variant="outline" size="sm" disabled={regenPending} />}
@@ -96,9 +125,9 @@ export default function Dashboard({
               <AlertDialogHeader>
                 <AlertDialogTitle>Regenerate this campaign?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  The AI rebuilds every plan and todo from your goal and selected channels. This
-                  replaces ALL plans and todos — including ones you added or edited yourself. This
-                  cannot be undone.
+                  The AI rebuilds every plan, todo and tool suggestion from your goal and selected
+                  channels. This replaces ALL plans and todos — including ones you added or edited
+                  yourself. This cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -118,7 +147,7 @@ export default function Dashboard({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <AddTodoDialog campaignId={campaign.id} plans={plans} />
+          <AddTodoDialog campaignId={campaign.id} plans={plans} tools={tools} />
         </div>
       </div>
 
@@ -152,12 +181,14 @@ export default function Dashboard({
             {visiblePlans.map((plan) => {
               const planTodos = todosByPlan.get(plan.id) ?? [];
               const planDone = planTodos.filter((t) => t.status === "done").length;
+              const suggested = planTools.filter((pt) => pt.plan_id === plan.id);
               return (
                 <section key={plan.id} className="glass rounded-2xl border p-4">
                   <header className="mb-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="font-heading text-lg font-semibold">{plan.title}</h2>
                       <Badge variant="outline">{channelName.get(plan.channel_id)}</Badge>
+                      <Badge className={planStatusPill[plan.status]}>{plan.status}</Badge>
                       <Badge className={priorityPill[plan.priority]}>{plan.priority}</Badge>
                       <span className="ml-auto text-xs tabular-nums text-muted-foreground">
                         {planDone}/{planTodos.length} done
@@ -169,63 +200,91 @@ export default function Dashboard({
                   </header>
 
                   <ul className="space-y-2">
-                    {planTodos.map((todo) => (
-                      <li
-                        key={todo.id}
-                        className="flex items-start gap-3 rounded-xl border bg-card/60 p-3"
-                        data-status={todo.status}
-                      >
-                        <Checkbox
-                          className="mt-1"
-                          checked={todo.status === "done"}
-                          onCheckedChange={(checked) =>
-                            startTransition(() =>
-                              updateTodo({
-                                id: todo.id,
-                                campaign_id: todo.campaign_id,
-                                status: checked ? "done" : "todo",
-                              }),
-                            )
-                          }
-                        />
-                        <div
-                          className="min-w-0 flex-1 cursor-pointer"
-                          onClick={() => setEditing(todo)}
-                          title="Click to edit"
+                    {planTodos.map((todo) => {
+                      const tool = todo.tool_id ? toolById.get(todo.tool_id) : null;
+                      return (
+                        <li
+                          key={todo.id}
+                          className="flex items-start gap-3 rounded-xl border bg-card/60 p-3"
+                          data-status={todo.status}
                         >
-                          <p
-                            className={
-                              todo.status === "done" ? "line-through text-muted-foreground" : ""
+                          <Checkbox
+                            className="mt-1"
+                            checked={todo.status === "done"}
+                            aria-label={`Mark ${todo.title} done`}
+                            onCheckedChange={(checked) =>
+                              startTransition(() =>
+                                updateTodo({
+                                  id: todo.id,
+                                  campaign_id: todo.campaign_id,
+                                  status: checked ? "done" : "backlog",
+                                }),
+                              )
                             }
+                          />
+                          <div
+                            className="min-w-0 flex-1 cursor-pointer"
+                            onClick={() => setEditing(todo)}
+                            title="Click to edit"
                           >
-                            {todo.title}
-                          </p>
-                          {todo.description && (
-                            <p className="mt-0.5 text-sm text-muted-foreground">{todo.description}</p>
-                          )}
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                            <Badge className={priorityPill[todo.priority]}>{todo.priority}</Badge>
-                            {todo.status === "in_progress" && (
-                              <Badge className="border-transparent bg-emerald-600/10 text-emerald-600 dark:text-emerald-400">
-                                in progress
-                              </Badge>
+                            <p
+                              className={
+                                todo.status === "done" ? "line-through text-muted-foreground" : ""
+                              }
+                            >
+                              {todo.title}
+                            </p>
+                            {todo.description && (
+                              <p className="mt-0.5 text-sm text-muted-foreground">
+                                {todo.description}
+                              </p>
                             )}
-                            {todo.estimated_time && (
-                              <span className="text-muted-foreground">~{todo.estimated_time}</span>
-                            )}
-                            {todo.due_date && (
-                              <span className="tabular-nums text-muted-foreground">
-                                due {todo.due_date}
-                              </span>
-                            )}
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                              <Badge className={priorityPill[todo.priority]}>{todo.priority}</Badge>
+                              {todo.status === "in_progress" && (
+                                <Badge className="border-transparent bg-primary/10 text-primary">
+                                  in progress
+                                </Badge>
+                              )}
+                              {todo.status === "review" && (
+                                <Badge className="border-transparent bg-sky-600/10 text-sky-600 dark:text-sky-400">
+                                  review
+                                </Badge>
+                              )}
+                              {tool && <Badge className={toolTag}>{tool.name}</Badge>}
+                              {todo.estimated_time && (
+                                <span className="text-muted-foreground">~{todo.estimated_time}</span>
+                              )}
+                              {todo.due_date && (
+                                <span className="tabular-nums text-muted-foreground">
+                                  due {todo.due_date}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      );
+                    })}
                     {planTodos.length === 0 && (
                       <li className="text-sm text-muted-foreground">No todos in this plan.</li>
                     )}
                   </ul>
+
+                  {suggested.length > 0 && (
+                    <div className="mt-3 rounded-xl border border-dashed p-3">
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Suggested tools
+                      </p>
+                      <div className="space-y-1.5">
+                        {suggested.map((pt) => (
+                          <div key={pt.id} className="flex flex-wrap items-baseline gap-2 text-xs">
+                            <Badge className={toolTag}>{toolById.get(pt.tool_id)?.name}</Badge>
+                            <span className="flex-1 text-muted-foreground">{pt.reason}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </section>
               );
             })}
@@ -311,6 +370,7 @@ export default function Dashboard({
         <EditTodoDialog
           todo={editing}
           plans={plans}
+          tools={tools}
           open={true}
           onOpenChange={(open) => {
             if (!open) setEditing(null);

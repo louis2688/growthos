@@ -6,6 +6,7 @@ import { generatePlans } from "@/app/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { WizardStepper } from "@/components/wizard-stepper";
 import type { Campaign, Channel, Confidence, Goal } from "@/lib/types";
 
 const confidencePill: Record<Confidence, string> = {
@@ -44,11 +45,12 @@ export default function ChannelPicker({
           ← All campaigns
         </Link>
       </div>
+      <WizardStepper current={3} />
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{campaign.name} — pick your channels</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Step 3 of 3 — the AI researched where &ldquo;{goal.audience}&rdquo; can be reached.
-          Select 2–6 to pursue; each gets its own plan and todos.
+          The AI researched where &ldquo;{goal.audience}&rdquo; can be reached. Select 2–6 to
+          pursue; each gets its own plan, todos, and tool suggestions.
         </p>
       </div>
 
@@ -93,8 +95,8 @@ export default function ChannelPicker({
         <div className="mt-6 flex items-center gap-4">
           <Button type="submit" disabled={pending || picked.size < 2 || picked.size > 6}>
             {pending
-              ? "Building plans and todos… 1–3 minutes"
-              : `Generate campaign (${picked.size} selected)`}
+              ? "Building plans, todos and tool suggestions… 1–3 minutes"
+              : `Continue (${picked.size} selected)`}
           </Button>
           {!pending && (picked.size < 2 || picked.size > 6) && (
             <span className="text-sm text-muted-foreground">Select 2–6 channels.</span>

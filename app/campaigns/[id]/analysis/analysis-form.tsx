@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { WizardStepper } from "@/components/wizard-stepper";
 import type { Campaign, Goal } from "@/lib/types";
 
-export default function ReviewForm({ campaign, goal }: { campaign: Campaign; goal: Goal }) {
+export default function AnalysisForm({ campaign, goal }: { campaign: Campaign; goal: Goal }) {
   const [state, formAction, pending] = useActionState(confirmGoal, null);
 
   return (
@@ -21,12 +22,13 @@ export default function ReviewForm({ campaign, goal }: { campaign: Campaign; goa
           ← All campaigns
         </Link>
       </div>
+      <WizardStepper current={2} />
       <Card className="glass rounded-2xl shadow-lg shadow-primary/5">
         <CardHeader>
           <CardTitle className="font-heading text-2xl">{campaign.name} — goal analysis</CardTitle>
           <CardDescription>
-            Step 2 of 3 — the AI&apos;s read of your goal. Edit anything that&apos;s off, then it
-            researches where to reach this audience.
+            The AI&apos;s read of your goal. Edit anything that&apos;s off, then it researches where
+            to reach this audience.
           </CardDescription>
         </CardHeader>
         <CardContent>

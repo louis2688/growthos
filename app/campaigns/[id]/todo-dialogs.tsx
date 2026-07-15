@@ -21,14 +21,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Plan, Priority, Todo, TodoStatus } from "@/lib/types";
+import type { Plan, Priority, Todo, TodoStatus, Tool } from "@/lib/types";
+
+const NO_TOOL = "none";
 
 function TodoFields({
   plans,
+  tools,
   defaults,
   withStatus,
 }: {
   plans: Plan[];
+  tools: Tool[];
   defaults?: Partial<Todo>;
   withStatus?: boolean;
 }) {
@@ -72,6 +76,24 @@ function TodoFields({
           </Select>
         </div>
         <div className="space-y-1.5">
+          <Label>Tool</Label>
+          <Select name="tool_id" defaultValue={defaults?.tool_id ?? NO_TOOL}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_TOOL}>No tool</SelectItem>
+              {tools
+                .filter((t) => t.status !== "disabled")
+                .map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
           <Label htmlFor="estimated_time">Estimated time</Label>
           <Input
             id="estimated_time"
@@ -87,13 +109,14 @@ function TodoFields({
         {withStatus && (
           <div className="space-y-1.5">
             <Label>Status</Label>
-            <Select name="status" defaultValue={defaults?.status ?? "todo"}>
+            <Select name="status" defaultValue={defaults?.status ?? "backlog"}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todo">todo</SelectItem>
+                <SelectItem value="backlog">backlog</SelectItem>
                 <SelectItem value="in_progress">in progress</SelectItem>
+                <SelectItem value="review">review</SelectItem>
                 <SelectItem value="done">done</SelectItem>
               </SelectContent>
             </Select>
@@ -105,11 +128,13 @@ function TodoFields({
 }
 
 function readFields(form: FormData) {
+  const toolId = String(form.get("tool_id") ?? NO_TOOL);
   return {
     title: String(form.get("title") ?? "").trim(),
     description: String(form.get("description") ?? "").trim(),
     plan_id: String(form.get("plan_id") ?? ""),
     priority: String(form.get("priority") ?? "medium") as Priority,
+    tool_id: toolId === NO_TOOL ? null : toolId,
     estimated_time: String(form.get("estimated_time") ?? "").trim() || null,
     due_date: String(form.get("due_date") ?? "") || null,
   };
@@ -118,11 +143,13 @@ function readFields(form: FormData) {
 export function EditTodoDialog({
   todo,
   plans,
+  tools,
   open,
   onOpenChange,
 }: {
   todo: Todo;
   plans: Plan[];
+  tools: Tool[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -150,7 +177,7 @@ export function EditTodoDialog({
           <DialogTitle>Edit todo</DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit}>
-          <TodoFields plans={plans} defaults={todo} withStatus />
+          <TodoFields plans={plans} tools={tools} defaults={todo} withStatus />
           <DialogFooter className="mt-4">
             <Button type="submit" disabled={pending}>
               {pending ? "Saving…" : "Save"}
@@ -162,7 +189,15 @@ export function EditTodoDialog({
   );
 }
 
-export function AddTodoDialog({ campaignId, plans }: { campaignId: string; plans: Plan[] }) {
+export function AddTodoDialog({
+  campaignId,
+  plans,
+  tools,
+}: {
+  campaignId: string;
+  plans: Plan[];
+  tools: Tool[];
+}) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -184,7 +219,7 @@ export function AddTodoDialog({ campaignId, plans }: { campaignId: string; plans
           <DialogTitle>Add todo</DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit}>
-          <TodoFields plans={plans} />
+          <TodoFields plans={plans} tools={tools} />
           <DialogFooter className="mt-4">
             <Button type="submit" disabled={pending}>
               {pending ? "Adding…" : "Add"}
