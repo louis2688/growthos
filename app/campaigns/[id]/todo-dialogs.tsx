@@ -21,14 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Channel, Todo, TodoPriority, TodoStatus } from "@/lib/types";
+import type { Plan, Priority, Todo, TodoStatus } from "@/lib/types";
 
 function TodoFields({
-  channels,
+  plans,
   defaults,
   withStatus,
 }: {
-  channels: Channel[];
+  plans: Plan[];
   defaults?: Partial<Todo>;
   withStatus?: boolean;
 }) {
@@ -44,15 +44,15 @@ function TodoFields({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label>Channel</Label>
-          <Select name="channel_id" defaultValue={defaults?.channel_id ?? channels[0]?.id}>
+          <Label>Plan</Label>
+          <Select name="plan_id" defaultValue={defaults?.plan_id ?? plans[0]?.id}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {channels.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
+              {plans.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -72,8 +72,13 @@ function TodoFields({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tool">Tool</Label>
-          <Input id="tool" name="tool" defaultValue={defaults?.tool ?? ""} />
+          <Label htmlFor="estimated_time">Estimated time</Label>
+          <Input
+            id="estimated_time"
+            name="estimated_time"
+            placeholder="e.g. 2 hours"
+            defaultValue={defaults?.estimated_time ?? ""}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="due_date">Due date</Label>
@@ -103,21 +108,21 @@ function readFields(form: FormData) {
   return {
     title: String(form.get("title") ?? "").trim(),
     description: String(form.get("description") ?? "").trim(),
-    channel_id: String(form.get("channel_id") ?? ""),
-    priority: String(form.get("priority") ?? "medium") as TodoPriority,
-    tool: String(form.get("tool") ?? "").trim() || null,
+    plan_id: String(form.get("plan_id") ?? ""),
+    priority: String(form.get("priority") ?? "medium") as Priority,
+    estimated_time: String(form.get("estimated_time") ?? "").trim() || null,
     due_date: String(form.get("due_date") ?? "") || null,
   };
 }
 
 export function EditTodoDialog({
   todo,
-  channels,
+  plans,
   open,
   onOpenChange,
 }: {
   todo: Todo;
-  channels: Channel[];
+  plans: Plan[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -145,7 +150,7 @@ export function EditTodoDialog({
           <DialogTitle>Edit todo</DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit}>
-          <TodoFields channels={channels} defaults={todo} withStatus />
+          <TodoFields plans={plans} defaults={todo} withStatus />
           <DialogFooter className="mt-4">
             <Button type="submit" disabled={pending}>
               {pending ? "Saving…" : "Save"}
@@ -157,13 +162,7 @@ export function EditTodoDialog({
   );
 }
 
-export function AddTodoDialog({
-  campaignId,
-  channels,
-}: {
-  campaignId: string;
-  channels: Channel[];
-}) {
+export function AddTodoDialog({ campaignId, plans }: { campaignId: string; plans: Plan[] }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -185,7 +184,7 @@ export function AddTodoDialog({
           <DialogTitle>Add todo</DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit}>
-          <TodoFields channels={channels} />
+          <TodoFields plans={plans} />
           <DialogFooter className="mt-4">
             <Button type="submit" disabled={pending}>
               {pending ? "Adding…" : "Add"}

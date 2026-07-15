@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { createCampaign } from "@/app/actions";
+import { startCampaign } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function IntakeForm() {
-  const [state, formAction, pending] = useActionState(createCampaign, null);
+  const [state, formAction, pending] = useActionState(startCampaign, null);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-12">
@@ -23,65 +23,50 @@ export default function IntakeForm() {
         <CardHeader>
           <CardTitle className="font-heading text-2xl">New campaign</CardTitle>
           <CardDescription>
-            Tell the AI about your product and goal — it will build the campaign.
+            Step 1 of 3 — tell the AI your goal. It analyzes it, researches channels, and you
+            pick which to pursue.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={formAction} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="productName">Product name *</Label>
+              <Label htmlFor="name">Product name *</Label>
               <Input
-                id="productName"
-                name="productName"
+                id="name"
+                name="name"
                 required
-                defaultValue={state?.values.productName ?? ""}
+                defaultValue={state?.values.name ?? ""}
                 placeholder="FocusFlow"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="productDescription">What does it do? *</Label>
+              <Label htmlFor="description">What does it do? *</Label>
               <Textarea
-                id="productDescription"
-                name="productDescription"
+                id="description"
+                name="description"
                 required
-                defaultValue={state?.values.productDescription ?? ""}
+                defaultValue={state?.values.description ?? ""}
                 placeholder="A Pomodoro timer app with AI-planned deep work sessions"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="audience">Target audience *</Label>
+              <Label htmlFor="rawGoal">Goal *</Label>
               <Input
-                id="audience"
-                name="audience"
+                id="rawGoal"
+                name="rawGoal"
                 required
-                defaultValue={state?.values.audience ?? ""}
-                placeholder="Freelance developers and designers"
+                defaultValue={state?.values.rawGoal ?? ""}
+                placeholder="Get my AI budgeting app to 100 users in 30 days"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="goal">Goal (include a timeframe) *</Label>
-              <Input
-                id="goal"
-                name="goal"
-                required
-                defaultValue={state?.values.goal ?? ""}
-                placeholder="10,000 users in 90 days"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="budget">Budget (optional)</Label>
-              <Input
-                id="budget"
-                name="budget"
-                defaultValue={state?.values.budget ?? ""}
-                placeholder="$500/month"
-              />
+              <p className="text-xs text-muted-foreground">
+                The AI derives your audience and KPIs from this — you review them next.
+              </p>
             </div>
 
-            {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+            {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
 
             <Button type="submit" disabled={pending} className="w-full">
-              {pending ? "Generating your campaign… this takes a minute or two" : "Generate my campaign"}
+              {pending ? "Analyzing your goal… ~30 seconds" : "Analyze my goal"}
             </Button>
           </form>
         </CardContent>

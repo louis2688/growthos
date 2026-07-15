@@ -18,23 +18,28 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { Campaign, Channel, Todo, TodoPriority } from "@/lib/types";
+import type { Campaign, Channel, Goal, Plan, Priority, Todo } from "@/lib/types";
 import { AddTodoDialog, EditTodoDialog } from "./todo-dialogs";
 
-// Soft pills per design-system/MASTER.md (not solid badge variants)
-const priorityPill: Record<TodoPriority, string> = {
+const priorityPill: Record<Priority, string> = {
   high: "border-transparent bg-destructive/10 text-destructive",
   medium: "border-transparent bg-primary/10 text-primary",
   low: "border-transparent bg-muted-foreground/15 text-muted-foreground",
 };
 
+const priorityRank: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
+
 export default function Dashboard({
   campaign,
+  goal,
   channels,
+  plans,
   todos,
 }: {
   campaign: Campaign;
+  goal: Goal;
   channels: Channel[];
+  plans: Plan[];
   todos: Todo[];
 }) {
   const router = useRouter();
@@ -45,25 +50,31 @@ export default function Dashboard({
   const [regenError, setRegenError] = useState<string | null>(null);
 
   const channelName = new Map(channels.map((c) => [c.id, c.name]));
-  const visible =
-    activeChannel === "all" ? todos : todos.filter((t) => t.channel_id === activeChannel);
+  const todosByPlan = new Map<string, Todo[]>();
+  for (const t of todos) {
+    todosByPlan.set(t.plan_id, [...(todosByPlan.get(t.plan_id) ?? []), t]);
+  }
+
+  const sortedPlans = [...plans].sort((a, b) => priorityRank[a.priority] - priorityRank[b.priority]);
+  const visiblePlans =
+    activeChannel === "all" ? sortedPlans : sortedPlans.filter((p) => p.channel_id === activeChannel);
+
   const done = todos.filter((t) => t.status === "done").length;
   const pct = todos.length === 0 ? 0 : Math.round((done / todos.length) * 100);
-  const perChannel = channels.map((c) => {
-    const ts = todos.filter((t) => t.channel_id === c.id);
-    return {
-      id: c.id,
-      name: c.name,
-      done: ts.filter((t) => t.status === "done").length,
-      total: ts.length,
-    };
-  });
   const nextUp = todos
     .filter((t) => t.status !== "done")
     .toSorted((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"))[0];
 
+  const goalLine = [
+    goal.objective,
+    goal.target_value && goal.target_metric ? `${goal.target_value} ${goal.target_metric}` : "",
+    goal.timeframe ? `in ${goal.timeframe}` : "",
+  ]
+    .filter(Boolean)
+    .join(" — ");
+
   return (
-    <main className="mx-auto max-w-4xl px-4 py-12">
+    <main className="mx-auto max-w-5xl px-4 py-12">
       <div className="mb-2">
         <Link href="/" className="text-sm text-muted-foreground hover:underline">
           ← All campaigns
@@ -71,12 +82,11 @@ export default function Dashboard({
       </div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold">{campaign.title}</h1>
-          <p className="mt-1 text-muted-foreground">{campaign.goal}</p>
+          <h1 className="text-3xl font-bold">{campaign.name}</h1>
+          <p className="mt-1 text-muted-foreground">{goalLine}</p>
         </div>
         <div className="flex items-center gap-2">
           <AlertDialog>
-            {/* Base UI: render prop replaces Radix asChild */}
             <AlertDialogTrigger
               render={<Button variant="outline" size="sm" disabled={regenPending} />}
             >
@@ -86,9 +96,9 @@ export default function Dashboard({
               <AlertDialogHeader>
                 <AlertDialogTitle>Regenerate this campaign?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  The AI will rebuild the plan from your original answers. This replaces ALL
-                  channels and todos — including ones you added or edited yourself. This cannot
-                  be undone.
+                  The AI rebuilds every plan and todo from your goal and selected channels. This
+                  replaces ALL plans and todos — including ones you added or edited yourself. This
+                  cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -108,6 +118,7 @@ export default function Dashboard({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          <AddTodoDialog campaignId={campaign.id} plans={plans} />
         </div>
       </div>
 
@@ -115,85 +126,113 @@ export default function Dashboard({
 
       <div className="grid items-start gap-5 lg:grid-cols-[1fr_264px]">
         <div className="min-w-0">
-          <div className="mb-4 flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          className="rounded-full"
-          variant={activeChannel === "all" ? "default" : "outline"}
-          onClick={() => setActiveChannel("all")}
-        >
-          All
-        </Button>
-        {channels.map((c) => (
-          <Button
-            key={c.id}
-            size="sm"
-            className="rounded-full"
-            variant={activeChannel === c.id ? "default" : "outline"}
-            onClick={() => setActiveChannel(c.id)}
-          >
-            {c.name}
-          </Button>
-        ))}
-      </div>
-
-      <div className="mb-6">
-        <AddTodoDialog campaignId={campaign.id} channels={channels} />
-      </div>
-
-      <ul className="space-y-2">
-        {visible.map((todo) => (
-          <li
-            key={todo.id}
-            className="glass flex items-start gap-3 rounded-xl border p-3.5 transition-colors hover:border-primary/40"
-            data-status={todo.status}
-          >
-            <Checkbox
-              className="mt-1"
-              checked={todo.status === "done"}
-              onCheckedChange={(checked) =>
-                startTransition(() =>
-                  updateTodo({
-                    id: todo.id,
-                    campaign_id: todo.campaign_id,
-                    status: checked ? "done" : "todo",
-                  }),
-                )
-              }
-            />
-            <div
-              className="min-w-0 flex-1 cursor-pointer"
-              onClick={() => setEditing(todo)}
-              title="Click to edit"
+          <div className="mb-5 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              className="rounded-full"
+              variant={activeChannel === "all" ? "default" : "outline"}
+              onClick={() => setActiveChannel("all")}
             >
-              <p className={todo.status === "done" ? "line-through text-muted-foreground" : ""}>
-                {todo.title}
-              </p>
-              {todo.description && (
-                <p className="mt-0.5 text-sm text-muted-foreground">{todo.description}</p>
-              )}
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                {activeChannel === "all" && (
-                  <Badge variant="outline">{channelName.get(todo.channel_id)}</Badge>
-                )}
-                <Badge className={priorityPill[todo.priority]}>{todo.priority}</Badge>
-                {todo.tool && <Badge variant="secondary">{todo.tool}</Badge>}
-                {todo.status === "in_progress" && (
-                  <Badge className="border-transparent bg-emerald-600/10 text-emerald-600 dark:text-emerald-400">
-                    in progress
-                  </Badge>
-                )}
-                {todo.due_date && (
-                  <span className="tabular-nums text-muted-foreground">due {todo.due_date}</span>
-                )}
-              </div>
-            </div>
-          </li>
-        ))}
-        {visible.length === 0 && (
-          <li className="text-muted-foreground">No todos in this channel.</li>
-        )}
-      </ul>
+              All
+            </Button>
+            {channels.map((c) => (
+              <Button
+                key={c.id}
+                size="sm"
+                className="rounded-full"
+                variant={activeChannel === c.id ? "default" : "outline"}
+                onClick={() => setActiveChannel(c.id)}
+              >
+                {c.name}
+              </Button>
+            ))}
+          </div>
+
+          <div className="space-y-6">
+            {visiblePlans.map((plan) => {
+              const planTodos = todosByPlan.get(plan.id) ?? [];
+              const planDone = planTodos.filter((t) => t.status === "done").length;
+              return (
+                <section key={plan.id} className="glass rounded-2xl border p-4">
+                  <header className="mb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="font-heading text-lg font-semibold">{plan.title}</h2>
+                      <Badge variant="outline">{channelName.get(plan.channel_id)}</Badge>
+                      <Badge className={priorityPill[plan.priority]}>{plan.priority}</Badge>
+                      <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+                        {planDone}/{planTodos.length} done
+                      </span>
+                    </div>
+                    {plan.objective && (
+                      <p className="mt-1 text-sm text-muted-foreground">{plan.objective}</p>
+                    )}
+                  </header>
+
+                  <ul className="space-y-2">
+                    {planTodos.map((todo) => (
+                      <li
+                        key={todo.id}
+                        className="flex items-start gap-3 rounded-xl border bg-card/60 p-3"
+                        data-status={todo.status}
+                      >
+                        <Checkbox
+                          className="mt-1"
+                          checked={todo.status === "done"}
+                          onCheckedChange={(checked) =>
+                            startTransition(() =>
+                              updateTodo({
+                                id: todo.id,
+                                campaign_id: todo.campaign_id,
+                                status: checked ? "done" : "todo",
+                              }),
+                            )
+                          }
+                        />
+                        <div
+                          className="min-w-0 flex-1 cursor-pointer"
+                          onClick={() => setEditing(todo)}
+                          title="Click to edit"
+                        >
+                          <p
+                            className={
+                              todo.status === "done" ? "line-through text-muted-foreground" : ""
+                            }
+                          >
+                            {todo.title}
+                          </p>
+                          {todo.description && (
+                            <p className="mt-0.5 text-sm text-muted-foreground">{todo.description}</p>
+                          )}
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                            <Badge className={priorityPill[todo.priority]}>{todo.priority}</Badge>
+                            {todo.status === "in_progress" && (
+                              <Badge className="border-transparent bg-emerald-600/10 text-emerald-600 dark:text-emerald-400">
+                                in progress
+                              </Badge>
+                            )}
+                            {todo.estimated_time && (
+                              <span className="text-muted-foreground">~{todo.estimated_time}</span>
+                            )}
+                            {todo.due_date && (
+                              <span className="tabular-nums text-muted-foreground">
+                                due {todo.due_date}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                    {planTodos.length === 0 && (
+                      <li className="text-sm text-muted-foreground">No todos in this plan.</li>
+                    )}
+                  </ul>
+                </section>
+              );
+            })}
+            {visiblePlans.length === 0 && (
+              <p className="text-muted-foreground">No plans for this channel.</p>
+            )}
+          </div>
         </div>
 
         <aside className="flex flex-col gap-4">
@@ -227,25 +266,31 @@ export default function Dashboard({
 
           <div className="glass rounded-2xl border p-4">
             <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              By channel
+              By plan
             </h4>
-            {perChannel.map((c) => (
-              <div
-                key={c.id}
-                className="mb-2.5 grid grid-cols-[86px_1fr_34px] items-center gap-2 text-xs text-muted-foreground last:mb-0"
-              >
-                <span className="truncate">{c.name}</span>
-                <span className="h-1.5 overflow-hidden rounded-full bg-primary/10">
-                  <span
-                    className="block h-full rounded-full bg-gradient-to-r from-primary to-brand-pink"
-                    style={{ width: c.total === 0 ? 0 : `${(c.done / c.total) * 100}%` }}
-                  />
-                </span>
-                <span className="text-right tabular-nums">
-                  {c.done}/{c.total}
-                </span>
-              </div>
-            ))}
+            {sortedPlans.map((p) => {
+              const ts = todosByPlan.get(p.id) ?? [];
+              const d = ts.filter((t) => t.status === "done").length;
+              return (
+                <div
+                  key={p.id}
+                  className="mb-2.5 grid grid-cols-[96px_1fr_34px] items-center gap-2 text-xs text-muted-foreground last:mb-0"
+                >
+                  <span className="truncate" title={p.title}>
+                    {p.title}
+                  </span>
+                  <span className="h-1.5 overflow-hidden rounded-full bg-primary/10">
+                    <span
+                      className="block h-full rounded-full bg-gradient-to-r from-primary to-brand-pink"
+                      style={{ width: ts.length === 0 ? 0 : `${(d / ts.length) * 100}%` }}
+                    />
+                  </span>
+                  <span className="text-right tabular-nums">
+                    {d}/{ts.length}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           {nextUp && (
@@ -265,7 +310,7 @@ export default function Dashboard({
       {editing && (
         <EditTodoDialog
           todo={editing}
-          channels={channels}
+          plans={plans}
           open={true}
           onOpenChange={(open) => {
             if (!open) setEditing(null);
