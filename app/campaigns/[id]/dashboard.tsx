@@ -49,6 +49,18 @@ export default function Dashboard({
     activeChannel === "all" ? todos : todos.filter((t) => t.channel_id === activeChannel);
   const done = todos.filter((t) => t.status === "done").length;
   const pct = todos.length === 0 ? 0 : Math.round((done / todos.length) * 100);
+  const perChannel = channels.map((c) => {
+    const ts = todos.filter((t) => t.channel_id === c.id);
+    return {
+      id: c.id,
+      name: c.name,
+      done: ts.filter((t) => t.status === "done").length,
+      total: ts.length,
+    };
+  });
+  const nextUp = todos
+    .filter((t) => t.status !== "done")
+    .toSorted((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"))[0];
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-12">
@@ -61,17 +73,6 @@ export default function Dashboard({
         <div className="min-w-0">
           <h1 className="text-3xl font-bold">{campaign.title}</h1>
           <p className="mt-1 text-muted-foreground">{campaign.goal}</p>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="h-2 w-44 overflow-hidden rounded-full bg-primary/10">
-              <span
-                className="block h-full rounded-full bg-gradient-to-r from-primary to-brand-pink"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {done}/{todos.length} done · {pct}%
-            </span>
-          </div>
         </div>
         <div className="flex items-center gap-2">
           <AlertDialog>
@@ -112,7 +113,9 @@ export default function Dashboard({
 
       {regenError && <p className="mb-4 text-sm text-destructive">{regenError}</p>}
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="grid items-start gap-5 lg:grid-cols-[1fr_264px]">
+        <div className="min-w-0">
+          <div className="mb-4 flex flex-wrap gap-2">
         <Button
           size="sm"
           className="rounded-full"
@@ -191,6 +194,73 @@ export default function Dashboard({
           <li className="text-muted-foreground">No todos in this channel.</li>
         )}
       </ul>
+        </div>
+
+        <aside className="flex flex-col gap-4">
+          <div className="glass rounded-2xl border p-4">
+            <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Progress
+            </h4>
+            <div className="flex items-center gap-3.5">
+              <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label={`${pct} percent complete`}>
+                <circle cx="32" cy="32" r="26" fill="none" className="stroke-primary/15" strokeWidth="8" />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="26"
+                  fill="none"
+                  className="stroke-primary"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(pct / 100) * 163.4} 163.4`}
+                  transform="rotate(-90 32 32)"
+                />
+              </svg>
+              <div>
+                <p className="font-heading text-xl font-bold tabular-nums">
+                  {done}/{todos.length}
+                </p>
+                <p className="text-xs text-muted-foreground">todos done · {pct}%</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass rounded-2xl border p-4">
+            <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              By channel
+            </h4>
+            {perChannel.map((c) => (
+              <div
+                key={c.id}
+                className="mb-2.5 grid grid-cols-[86px_1fr_34px] items-center gap-2 text-xs text-muted-foreground last:mb-0"
+              >
+                <span className="truncate">{c.name}</span>
+                <span className="h-1.5 overflow-hidden rounded-full bg-primary/10">
+                  <span
+                    className="block h-full rounded-full bg-gradient-to-r from-primary to-brand-pink"
+                    style={{ width: c.total === 0 ? 0 : `${(c.done / c.total) * 100}%` }}
+                  />
+                </span>
+                <span className="text-right tabular-nums">
+                  {c.done}/{c.total}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {nextUp && (
+            <div className="glass rounded-2xl border p-4">
+              <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Next up
+              </h4>
+              <p className="text-sm font-medium">{nextUp.title}</p>
+              {nextUp.due_date && (
+                <p className="mt-1 text-xs tabular-nums text-muted-foreground">due {nextUp.due_date}</p>
+              )}
+            </div>
+          )}
+        </aside>
+      </div>
 
       {editing && (
         <EditTodoDialog
