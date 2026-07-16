@@ -11,6 +11,7 @@ import { formatSeoRewrite, optimizeForSeo } from "@/lib/agents/seo-optimizer";
 import { composeEmailDigest, formatEmailDigest } from "@/lib/agents/email-digest";
 import { buildUtm, campaignSlug, formatUtm } from "@/lib/agents/utm-builder";
 import { formatTiming, recommendTiming } from "@/lib/agents/launch-timing";
+import { traced } from "@/lib/agents/trace";
 import { createClient, currentUser } from "@/lib/supabase/server";
 import type { Channel, Goal, Priority, Tool, TodoStatus } from "@/lib/types";
 
@@ -42,6 +43,10 @@ export async function startCampaign(
 
   let campaignId: string;
   try {
+    // Not traced: this runs before the campaign row exists, and agent_runs is owner-scoped
+    // through campaign_id. Creating the campaign first just to trace would leave an orphan
+    // draft with no goal if analysis failed. It's also the cheapest agent — no web search,
+    // small output. The ones that actually fail mysteriously all have a campaign to hang off.
     const analysis = await analyzeGoal({
       productName: values.name,
       productDescription: values.description,
@@ -115,11 +120,13 @@ export async function confirmGoal(
   if (upErr) return { error: upErr.message };
 
   try {
-    const research = await researchChannels({
-      productName: campaign.name,
-      productDescription: campaign.description,
-      goal: edited,
-    });
+    const research = await traced(db, { agent: "channel_research", campaign_id: campaignId }, () =>
+      researchChannels({
+        productName: campaign.name,
+        productDescription: campaign.description,
+        goal: edited,
+      }),
+    );
 
     // Idempotent on retry: clear any channels from a previous attempt.
     await db.from("channels").delete().eq("campaign_id", campaignId);
@@ -159,20 +166,23 @@ export type GeneratePlansState = { error: string } | null;
  */
 async function suggestToolsForPlan(
   db: Awaited<ReturnType<typeof createClient>>,
-  plan: { id: string; title: string; objective: string; channel: string; platform: string },
-  todos: { id: string; title: string; description: string }[],
+  campaignId: string,
+  plan: PlanForTools,
+  todos: TodosForTools,
   catalog: Pick<Tool, "id" | "name" | "category" | "description">[],
 ): Promise<void> {
   try {
-    const rec = await recommendTools({
-      plan,
-      todos: todos.map((t) => ({ title: t.title, description: t.description })),
-      catalog: catalog.map((t) => ({
-        name: t.name,
-        category: t.category,
-        description: t.description,
-      })),
-    });
+    const rec = await traced(db, { agent: "tool_recommender", campaign_id: campaignId }, () =>
+      recommendTools({
+        plan,
+        todos: todos.map((t) => ({ title: t.title, description: t.description })),
+        catalog: catalog.map((t) => ({
+          name: t.name,
+          category: t.category,
+          description: t.description,
+        })),
+      }),
+    );
 
     // The model can name the same tool twice; plan_tools is unique(plan_id, tool_id), so
     // an un-deduped batch insert fails wholesale and drops EVERY suggestion for the plan.
@@ -205,8 +215,8 @@ async function suggestToolsForPlan(
   }
 }
 
-type PlanForTools = Parameters<typeof suggestToolsForPlan>[1];
-type TodosForTools = Parameters<typeof suggestToolsForPlan>[2];
+type PlanForTools = { id: string; title: string; objective: string; channel: string; platform: string };
+type TodosForTools = { id: string; title: string; description: string }[];
 
 async function insertPlansAndTodos(
   db: Awaited<ReturnType<typeof createClient>>,
@@ -260,7 +270,9 @@ async function insertPlansAndTodos(
     });
   }
 
-  await Promise.all(created.map(({ plan, todos }) => suggestToolsForPlan(db, plan, todos, catalog)));
+  await Promise.all(
+    created.map(({ plan, todos }) => suggestToolsForPlan(db, campaignId, plan, todos, catalog)),
+  );
 }
 
 async function activeCatalog(
@@ -301,12 +313,14 @@ export async function generatePlans(
   if (selected.length !== selectedIds.length) return { error: "Unknown channel selected." };
 
   try {
-    const result = await generateCampaignPlan({
-      productName: campaign.name,
-      productDescription: campaign.description,
-      goal: goal as Goal,
-      channels: selected.map((c) => ({ name: c.name, platform: c.platform, reason: c.reason })),
-    });
+    const result = await traced(db, { agent: "campaign_generator", campaign_id: campaignId }, () =>
+      generateCampaignPlan({
+        productName: campaign.name,
+        productDescription: campaign.description,
+        goal: goal as Goal,
+        channels: selected.map((c) => ({ name: c.name, platform: c.platform, reason: c.reason })),
+      }),
+    );
 
     // Record the selection; clear any prior attempt's plans (cascade removes todos).
     await db.from("channels").update({ selected: false }).eq("campaign_id", campaignId);
@@ -376,12 +390,14 @@ export async function regenerateCampaign(
 
   try {
     // Generate BEFORE deleting: a failed generation leaves the campaign untouched.
-    const result = await generateCampaignPlan({
-      productName: campaign.name,
-      productDescription: campaign.description,
-      goal: goal as Goal,
-      channels: selected.map((c) => ({ name: c.name, platform: c.platform, reason: c.reason })),
-    });
+    const result = await traced(db, { agent: "campaign_generator", campaign_id: campaignId }, () =>
+      generateCampaignPlan({
+        productName: campaign.name,
+        productDescription: campaign.description,
+        goal: goal as Goal,
+        channels: selected.map((c) => ({ name: c.name, platform: c.platform, reason: c.reason })),
+      }),
+    );
 
     await db.from("plans").delete().eq("campaign_id", campaignId);
     await insertPlansAndTodos(db, campaignId, selected, result.plans, catalog);
@@ -471,46 +487,50 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
       todo: { title: todo.title, description: todo.description },
     };
 
-    let output: string;
-    switch ((tool as Tool).handler) {
-      case "post_writer":
-        output = formatDraft(await writePost({ ...shared, channel }));
-        break;
+    // One trace per tool run, keyed by handler, carrying the todo so a failure is traceable
+    // to the exact thing the user clicked Run on.
+    const output = await traced(
+      db,
+      { agent: (tool as Tool).handler!, campaign_id: todo.campaign_id, todo_id: todo.id },
+      async () => {
+        switch ((tool as Tool).handler) {
+          case "post_writer":
+            return formatDraft(await writePost({ ...shared, channel }));
 
-      case "seo_optimizer":
-        output = formatSeoRewrite(await optimizeForSeo({ ...shared, channel }));
-        break;
+          case "seo_optimizer":
+            return formatSeoRewrite(await optimizeForSeo({ ...shared, channel }));
 
-      case "email_digest": {
-        output = formatEmailDigest(
-          await composeEmailDigest({ ...shared, ...(await campaignMilestones(db, todo.campaign_id)) }),
-        );
-        break;
-      }
+          case "email_digest":
+            return formatEmailDigest(
+              await composeEmailDigest({
+                ...shared,
+                ...(await campaignMilestones(db, todo.campaign_id)),
+              }),
+            );
 
-      case "utm_builder": {
-        // Derived from the campaign, not sampled per run — every link in a campaign must
-        // carry the same utm_campaign or the analytics report fragments.
-        const slug = campaignSlug(campaign.name);
-        output = formatUtm(await buildUtm({ ...shared, channel, campaign: slug }), slug);
-        break;
-      }
+          case "utm_builder": {
+            // Derived from the campaign, not sampled per run — every link in a campaign must
+            // carry the same utm_campaign or the analytics report fragments.
+            const slug = campaignSlug(campaign.name);
+            return formatUtm(await buildUtm({ ...shared, channel, campaign: slug }), slug);
+          }
 
-      case "launch_timing":
-        output = formatTiming(
-          await recommendTiming({
-            productName: shared.productName,
-            goal: shared.goal,
-            channel,
-            plan: shared.plan,
-            todo: shared.todo,
-          }),
-        );
-        break;
+          case "launch_timing":
+            return formatTiming(
+              await recommendTiming({
+                productName: shared.productName,
+                goal: shared.goal,
+                channel,
+                plan: shared.plan,
+                todo: shared.todo,
+              }),
+            );
 
-      default:
-        return { error: `No handler wired for ${(tool as Tool).name}.` };
-    }
+          default:
+            throw new Error(`No handler wired for ${(tool as Tool).name}.`);
+        }
+      },
+    );
 
     // Stamp provenance with the artifact so the UI can never caption a draft with a
     // tool that didn't write it.

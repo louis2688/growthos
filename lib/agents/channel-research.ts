@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic } from "./run";
+import { MODEL, anthropic, deadlineSignal } from "./run";
 import type { GoalAnalysis } from "./goal-analyzer";
 
 export const ChannelResearchSchema = z.object({
@@ -47,26 +47,34 @@ search; if search fails you, you may fall back to well-known channels from your 
 knowledge but mark those confidence "low".`;
 }
 
-const tools = [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 6 }];
+// 6 searches put a real run at 252s against Vercel's 300s ceiling. 4 still comfortably
+// covers "find and verify 6-10 channels" and buys back headroom.
+const tools = [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 4 }];
 
 export async function researchChannels(input: ChannelResearchInput): Promise<ChannelResearch> {
-  // Deliberately NOT wrapped in withRetry: this agent runs up to 6 web searches, and a
+  // Deliberately NOT wrapped in withRetry: this agent runs several web searches, and a
   // retry re-runs the whole conversation from scratch — the most expensive call in the app,
   // charged twice. Its only caller (confirmGoal) already catches and offers the user a
   // retry, so an internal retry just doubles cost for a rare malformed-output case.
   const client = anthropic();
+  // One deadline across the whole pause/resume loop, not per request — the loop is what
+  // runs long, and being killed by the platform mid-loop is the failure we're avoiding.
+  const signal = deadlineSignal();
   let messages: Anthropic.MessageParam[] = [{ role: "user", content: buildPrompt(input) }];
 
   // Server-side web search can pause long turns; resume by echoing content back.
   for (let attempt = 0; attempt < 5; attempt++) {
-    const response = await client.messages.parse({
-      model: MODEL,
-      max_tokens: 8192,
-      thinking: { type: "adaptive" },
-      tools,
-      output_config: { format: zodOutputFormat(ChannelResearchSchema) },
-      messages,
-    });
+    const response = await client.messages.parse(
+      {
+        model: MODEL,
+        max_tokens: 8192,
+        thinking: { type: "adaptive" },
+        tools,
+        output_config: { format: zodOutputFormat(ChannelResearchSchema) },
+        messages,
+      },
+      { signal },
+    );
 
     if (response.stop_reason === "pause_turn") {
       messages = [...messages, { role: "assistant", content: response.content }];

@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, oneLine } from "./run";
+import { MODEL, anthropic, deadlineSignal, oneLine } from "./run";
 
 export const LaunchTimingSchema = z.object({
   window: z
@@ -63,17 +63,21 @@ export async function recommendTiming(input: LaunchTimingInput): Promise<LaunchT
   // Not wrapped in withRetry: same reasoning as researchChannels — a retry re-runs every
   // web search from scratch, and runTodoTool already surfaces a retry to the user.
   const client = anthropic();
+  const signal = deadlineSignal();
   let messages: Anthropic.MessageParam[] = [{ role: "user", content: buildPrompt(input) }];
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const response = await client.messages.parse({
-      model: MODEL,
-      max_tokens: 4000,
-      thinking: { type: "adaptive" },
-      tools,
-      output_config: { format: zodOutputFormat(LaunchTimingSchema) },
-      messages,
-    });
+    const response = await client.messages.parse(
+      {
+        model: MODEL,
+        max_tokens: 4000,
+        thinking: { type: "adaptive" },
+        tools,
+        output_config: { format: zodOutputFormat(LaunchTimingSchema) },
+        messages,
+      },
+      { signal },
+    );
 
     if (response.stop_reason === "pause_turn") {
       messages = [...messages, { role: "assistant", content: response.content }];
