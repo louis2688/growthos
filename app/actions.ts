@@ -9,6 +9,8 @@ import { recommendTools } from "@/lib/agents/tool-recommender";
 import { formatDraft, writePost } from "@/lib/agents/post-writer";
 import { formatSeoRewrite, optimizeForSeo } from "@/lib/agents/seo-optimizer";
 import { composeEmailDigest, formatEmailDigest } from "@/lib/agents/email-digest";
+import { buildUtm, campaignSlug, formatUtm } from "@/lib/agents/utm-builder";
+import { formatTiming, recommendTiming } from "@/lib/agents/launch-timing";
 import { createClient, currentUser } from "@/lib/supabase/server";
 import type { Channel, Goal, Priority, Tool, TodoStatus } from "@/lib/types";
 
@@ -485,6 +487,26 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
         );
         break;
       }
+
+      case "utm_builder": {
+        // Derived from the campaign, not sampled per run — every link in a campaign must
+        // carry the same utm_campaign or the analytics report fragments.
+        const slug = campaignSlug(campaign.name);
+        output = formatUtm(await buildUtm({ ...shared, channel, campaign: slug }), slug);
+        break;
+      }
+
+      case "launch_timing":
+        output = formatTiming(
+          await recommendTiming({
+            productName: shared.productName,
+            goal: shared.goal,
+            channel,
+            plan: shared.plan,
+            todo: shared.todo,
+          }),
+        );
+        break;
 
       default:
         return { error: `No handler wired for ${(tool as Tool).name}.` };

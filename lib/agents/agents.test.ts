@@ -6,6 +6,8 @@ import { ToolRecommendationSchema, recommendTools } from "./tool-recommender";
 import { PostDraftSchema, formatDraft } from "./post-writer";
 import { SeoRewriteSchema, formatSeoRewrite } from "./seo-optimizer";
 import { EmailDigestSchema, formatEmailDigest } from "./email-digest";
+import { UtmPlanSchema, campaignSlug, formatUtm, URL_PLACEHOLDER } from "./utm-builder";
+import { LaunchTimingSchema, formatTiming } from "./launch-timing";
 
 describe("GoalAnalysisSchema", () => {
   const valid = {
@@ -230,5 +232,122 @@ describe("formatEmailDigest", () => {
     expect(formatEmailDigest({ subject: "S", preview: "P", body: "B", notes: "N" })).toBe(
       "Subject: S\n\nPreview: P\n\nB\n\n---\nBefore sending: N",
     );
+  });
+});
+
+describe("UtmPlanSchema", () => {
+  const valid = {
+    source: "reddit",
+    medium: "social",
+    content: "r_freelance-painpoint",
+    watch: "Signups tagged utm_content=r_freelance-painpoint over the week after posting.",
+  };
+
+  it("accepts a valid plan", () => {
+    expect(UtmPlanSchema.safeParse(valid).success).toBe(true);
+  });
+
+  // The regex is the guard that stops analytics tools splitting one link across buckets.
+  it("rejects spaces and capitals, which silently fragment attribution", () => {
+    expect(UtmPlanSchema.safeParse({ ...valid, source: "Indie Hackers" }).success).toBe(false);
+    expect(UtmPlanSchema.safeParse({ ...valid, medium: "Social" }).success).toBe(false);
+  });
+
+  // utm_campaign is derived in code, so the model can't sample a different slug per run.
+  it("does not ask the model for utm_campaign at all", () => {
+    expect("campaign" in UtmPlanSchema.shape).toBe(false);
+  });
+
+  it("rejects a value that would need url-encoding", () => {
+    expect(UtmPlanSchema.safeParse({ ...valid, content: "post?v=1&x" }).success).toBe(false);
+  });
+});
+
+describe("campaignSlug", () => {
+  // Every link in one campaign must share utm_campaign or the report splits in two.
+  it("is stable and url-safe for the same campaign name", () => {
+    expect(campaignSlug("LedgerLite")).toBe("ledgerlite");
+    expect(campaignSlug("Indie Hackers — Freelancers group")).toBe("indie-hackers-freelancers-group");
+    expect(campaignSlug("LedgerLite")).toBe(campaignSlug("LedgerLite"));
+  });
+
+  it("never returns an empty slug", () => {
+    expect(campaignSlug("!!!")).toBe("campaign");
+  });
+});
+
+describe("formatUtm", () => {
+  const plan = {
+    source: "reddit",
+    medium: "social",
+    content: "painpoint-post",
+    watch: "Tagged signups.",
+  };
+
+  it("assembles the query in a fixed order with an unmissable url placeholder", () => {
+    const out = formatUtm(plan, "ledgerlite");
+    expect(out.startsWith(`${URL_PLACEHOLDER}?utm_source=reddit&utm_medium=social`)).toBe(true);
+    expect(out).toContain("utm_campaign=ledgerlite&utm_content=painpoint-post");
+  });
+
+  it("never emits a real domain — the user supplies it", () => {
+    expect(formatUtm(plan, "ledgerlite")).toContain("GrowthOS doesn't know your URL");
+  });
+
+  // The '?' is hard-coded, so a landing page that already has a query string would swallow
+  // utm_source unless the note tells the user to join with '&'.
+  it("warns about a landing page that already has a query string", () => {
+    expect(formatUtm(plan, "ledgerlite")).toContain('change the "?" before utm_source to "&"');
+  });
+});
+
+describe("LaunchTimingSchema", () => {
+  const valid = {
+    window: "Tuesday 08:00–10:00",
+    timezone: "US Eastern",
+    confidence: "medium" as const,
+    reasoning: "r/freelance peaks on weekday mornings.",
+    checklist: ["Draft ready", "Reply for the first hour"],
+  };
+
+  it("accepts valid timing", () => {
+    expect(LaunchTimingSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects a one-item checklist", () => {
+    expect(LaunchTimingSchema.safeParse({ ...valid, checklist: ["only one"] }).success).toBe(false);
+  });
+
+  it("rejects an unknown confidence", () => {
+    expect(LaunchTimingSchema.safeParse({ ...valid, confidence: "certain" }).success).toBe(false);
+  });
+});
+
+describe("formatTiming", () => {
+  // A model really did emit a literal \r inside `window`, which reached the artifact's
+  // headline as a broken line. These agents don't retry (web search is paid), so the
+  // formatter normalises rather than rejects.
+  it("strips a control character a model emitted mid-window", () => {
+    const out = formatTiming({
+      window: "Tuesday\r08:00-10:00",
+      timezone: "US\nEastern",
+      confidence: "low",
+      reasoning: "r",
+      checklist: ["a", "b"],
+    });
+    expect(out).toContain("Post: Tuesday 08:00-10:00 (US Eastern)");
+    expect(/[\u0000-\u001F]/.test(out.split("\n")[0])).toBe(false);
+  });
+
+  it("states plainly that nothing is published for you", () => {
+    const out = formatTiming({
+      window: "Tue 08:00",
+      timezone: "US Eastern",
+      confidence: "low",
+      reasoning: "General heuristic — could not verify.",
+      checklist: ["a", "b"],
+    });
+    expect(out).toContain("Post: Tue 08:00 (US Eastern)");
+    expect(out).toContain("GrowthOS doesn't publish anything");
   });
 });

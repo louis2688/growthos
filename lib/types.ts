@@ -64,7 +64,12 @@ export type Plan = {
 };
 
 /** Agents that can actually run a todo. A tool with no handler is catalog-only. */
-export type ToolHandler = "post_writer" | "seo_optimizer" | "email_digest";
+export type ToolHandler =
+  | "post_writer"
+  | "seo_optimizer"
+  | "email_digest"
+  | "utm_builder"
+  | "launch_timing";
 
 /** Global catalog row — not scoped to a campaign (domain-model-uml.html). */
 export type Tool = {
