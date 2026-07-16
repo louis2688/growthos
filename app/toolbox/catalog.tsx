@@ -32,10 +32,12 @@ const categoryIcon: Record<ToolCategory, string> = {
   outreach: "bg-amber-600 text-white",
 };
 
+// Badge defaults to variant="default" (bg-primary), so every tone must set its own
+// background — otherwise the text sits on brand purple and is unreadable.
 const statusBadge: Record<ToolStatus, string> = {
-  active: "border-emerald-600/40 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400",
-  beta: "border-primary/40 bg-primary/10 text-primary",
-  disabled: "border-muted-foreground/30 text-muted-foreground",
+  active: "border-transparent bg-emerald-600/10 text-emerald-700 dark:text-emerald-400",
+  beta: "border-transparent bg-primary/10 text-primary",
+  disabled: "border-transparent bg-muted-foreground/15 text-muted-foreground",
 };
 
 const integrationLabel: Record<ToolIntegration, string> = {
@@ -58,14 +60,14 @@ function availability(tool: Tool): { label: string; tone: string; detail: string
   if (tool.status === "disabled") {
     return {
       label: "Disabled",
-      tone: "border-muted-foreground/30 text-muted-foreground",
+      tone: "border-transparent bg-muted-foreground/15 text-muted-foreground",
       detail: "This tool is switched off in the catalog and won't be suggested for any plan.",
     };
   }
   if (tool.handler) {
     return {
       label: "Ready to run",
-      tone: "border-emerald-600/40 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400",
+      tone: "border-transparent bg-emerald-600/10 text-emerald-700 dark:text-emerald-400",
       detail:
         "Open a todo this tool is assigned to and press Run — the draft is saved onto that todo.",
     };
@@ -73,13 +75,13 @@ function availability(tool: Tool): { label: string; tone: string; detail: string
   if (tool.integration_type === "link-out") {
     return {
       label: "Opens externally",
-      tone: "border-brand-indigo/40 text-brand-indigo",
+      tone: "border-transparent bg-sky-600/10 text-sky-700 dark:text-sky-400",
       detail: "This one hands off to an external site — GrowthOS just points you at it.",
     };
   }
   return {
     label: "Not built yet",
-    tone: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    tone: "border-transparent bg-amber-500/10 text-amber-700 dark:text-amber-400",
     detail:
       tool.integration_type === "api"
         ? "The AI can suggest this tool and assign it to todos, but connecting it to its API isn't built yet — for now you'd do this step by hand."
@@ -227,16 +229,17 @@ export default function Catalog({
           const state = availability(tool);
           const u = usage[tool.id] ?? { plans: 0, todos: 0 };
           return (
-            <article
-              key={tool.id}
-              className={`glass flex flex-col rounded-2xl border p-4 ${
-                tool.status === "disabled" ? "opacity-60" : ""
-              }`}
-            >
+            <article key={tool.id} className="glass flex flex-col rounded-2xl border p-4">
               <div className="flex gap-3">
+                {/* Disabled reads through the muted icon and badge, not a blanket
+                    opacity — dimming the card made its body copy unreadable. */}
                 <div
                   aria-hidden
-                  className={`flex size-11 flex-none items-center justify-center rounded-xl font-heading font-bold ${categoryIcon[tool.category]}`}
+                  className={`flex size-11 flex-none items-center justify-center rounded-xl font-heading font-bold ${
+                    tool.status === "disabled"
+                      ? "bg-muted text-muted-foreground"
+                      : categoryIcon[tool.category]
+                  }`}
                 >
                   {initials(tool.name)}
                 </div>
