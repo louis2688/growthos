@@ -10,6 +10,14 @@ export type ToolStatus = "active" | "beta" | "disabled";
 /** Kanban column order (campaign-kanban.html). */
 export const TODO_STATUSES: TodoStatus[] = ["backlog", "in_progress", "review", "done"];
 
+/** Human labels for todo statuses — the raw enum has an underscore. */
+export const TODO_STATUS_LABEL: Record<TodoStatus, string> = {
+  backlog: "backlog",
+  in_progress: "in progress",
+  review: "review",
+  done: "done",
+};
+
 export type Campaign = {
   id: string;
   user_id: string;

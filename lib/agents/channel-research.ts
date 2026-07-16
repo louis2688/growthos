@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, withRetry } from "./run";
+import { MODEL, anthropic } from "./run";
 import type { GoalAnalysis } from "./goal-analyzer";
 
 export const ChannelResearchSchema = z.object({
@@ -50,28 +50,30 @@ knowledge but mark those confidence "low".`;
 const tools = [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 6 }];
 
 export async function researchChannels(input: ChannelResearchInput): Promise<ChannelResearch> {
-  return withRetry(async () => {
-    const client = anthropic();
-    let messages: Anthropic.MessageParam[] = [{ role: "user", content: buildPrompt(input) }];
+  // Deliberately NOT wrapped in withRetry: this agent runs up to 6 web searches, and a
+  // retry re-runs the whole conversation from scratch — the most expensive call in the app,
+  // charged twice. Its only caller (confirmGoal) already catches and offers the user a
+  // retry, so an internal retry just doubles cost for a rare malformed-output case.
+  const client = anthropic();
+  let messages: Anthropic.MessageParam[] = [{ role: "user", content: buildPrompt(input) }];
 
-    // Server-side web search can pause long turns; resume by echoing content back.
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const response = await client.messages.parse({
-        model: MODEL,
-        max_tokens: 8192,
-        thinking: { type: "adaptive" },
-        tools,
-        output_config: { format: zodOutputFormat(ChannelResearchSchema) },
-        messages,
-      });
+  // Server-side web search can pause long turns; resume by echoing content back.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const response = await client.messages.parse({
+      model: MODEL,
+      max_tokens: 8192,
+      thinking: { type: "adaptive" },
+      tools,
+      output_config: { format: zodOutputFormat(ChannelResearchSchema) },
+      messages,
+    });
 
-      if (response.stop_reason === "pause_turn") {
-        messages = [...messages, { role: "assistant", content: response.content }];
-        continue;
-      }
-      if (!response.parsed_output) throw new Error("Model returned no parsable channel research");
-      return response.parsed_output;
+    if (response.stop_reason === "pause_turn") {
+      messages = [...messages, { role: "assistant", content: response.content }];
+      continue;
     }
-    throw new Error("Channel research did not complete after repeated pauses");
-  });
+    if (!response.parsed_output) throw new Error("Model returned no parsable channel research");
+    return response.parsed_output;
+  }
+  throw new Error("Channel research did not complete after repeated pauses");
 }

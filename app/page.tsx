@@ -16,17 +16,28 @@ const stepLabel = {
 
 export default async function Home() {
   const db = await createClient();
+  // throwOnError: a failed read must surface an error page, not an empty result that
+  // renders "No campaigns yet" to someone who has ten.
   const [{ data: campaigns }, { data: goals }, { data: todos }, { data: channels }] =
     await Promise.all([
       db
         .from("campaigns")
         .select("*")
         .neq("status", "archived")
-        .order("created_at", { ascending: false }),
-      db.from("goals").select("campaign_id, objective, target_value, target_metric, timeframe"),
-      db.from("todos").select("campaign_id, status, priority, due_date"),
-      db.from("channels").select("campaign_id, name").eq("selected", true),
+        .order("created_at", { ascending: false })
+        .throwOnError(),
+      db
+        .from("goals")
+        .select("campaign_id, objective, target_value, target_metric, timeframe")
+        .throwOnError(),
+      db.from("todos").select("campaign_id, status, priority, due_date").throwOnError(),
+      db.from("channels").select("campaign_id, name").eq("selected", true).throwOnError(),
     ]);
+
+  const all = (campaigns ?? []) as Campaign[];
+  // The campaigns read excludes archived, but todos/channels don't — scope the stats to
+  // visible campaigns so archived work doesn't inflate "Todos done" / "across N channels".
+  const visibleIds = new Set(all.map((c) => c.id));
 
   const goalByCampaign = new Map(
     ((goals ?? []) as Pick<
@@ -34,23 +45,26 @@ export default async function Home() {
       "campaign_id" | "objective" | "target_value" | "target_metric" | "timeframe"
     >[]).map((g) => [g.campaign_id, g]),
   );
+  const allTodos = (todos ?? []).filter((t) => visibleIds.has(t.campaign_id));
+  const visibleChannels = ((channels ?? []) as Pick<Channel, "campaign_id" | "name">[]).filter((c) =>
+    visibleIds.has(c.campaign_id),
+  );
+
   const progress = new Map<string, { done: number; total: number }>();
-  for (const t of todos ?? []) {
+  for (const t of allTodos) {
     const p = progress.get(t.campaign_id) ?? { done: 0, total: 0 };
     p.total += 1;
     if (t.status === "done") p.done += 1;
     progress.set(t.campaign_id, p);
   }
   const channelsByCampaign = new Map<string, string[]>();
-  for (const c of (channels ?? []) as Pick<Channel, "campaign_id" | "name">[]) {
+  for (const c of visibleChannels) {
     channelsByCampaign.set(c.campaign_id, [...(channelsByCampaign.get(c.campaign_id) ?? []), c.name]);
   }
 
-  const all = (campaigns ?? []) as Campaign[];
   const active = all.filter((c) => c.status === "active");
   const inProgress = all.filter((c) => c.status !== "active");
 
-  const allTodos = todos ?? [];
   const doneCount = allTodos.filter((t) => t.status === "done").length;
   const in7 = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
   const today = new Date().toISOString().slice(0, 10);
@@ -60,7 +74,7 @@ export default async function Home() {
   const dueSoonHigh = dueSoon.filter((t) => t.priority === "high").length;
 
   const stats = [
-    { k: "Active campaigns", v: active.length, d: `across ${(channels ?? []).length} channels` },
+    { k: "Active campaigns", v: active.length, d: `across ${visibleChannels.length} channels` },
     { k: "Todos done", v: doneCount, d: `of ${allTodos.length} total` },
     { k: "Due in next 7 days", v: dueSoon.length, d: `${dueSoonHigh} high priority` },
   ];

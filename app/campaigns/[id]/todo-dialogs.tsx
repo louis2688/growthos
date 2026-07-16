@@ -21,7 +21,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Plan, Priority, Todo, TodoStatus, Tool } from "@/lib/types";
+import {
+  TODO_STATUSES,
+  TODO_STATUS_LABEL,
+  type Plan,
+  type Priority,
+  type Todo,
+  type TodoStatus,
+  type Tool,
+} from "@/lib/types";
 
 const NO_TOOL = "none";
 
@@ -123,15 +131,20 @@ function TodoFields({
         {withStatus && (
           <div className="space-y-1.5">
             <Label>Status</Label>
-            <Select name="status" defaultValue={defaults?.status ?? "backlog"}>
+            <Select
+              name="status"
+              defaultValue={defaults?.status ?? "backlog"}
+              items={TODO_STATUSES.map((s) => ({ value: s, label: TODO_STATUS_LABEL[s] }))}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="backlog">backlog</SelectItem>
-                <SelectItem value="in_progress">in progress</SelectItem>
-                <SelectItem value="review">review</SelectItem>
-                <SelectItem value="done">done</SelectItem>
+                {TODO_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {TODO_STATUS_LABEL[s]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

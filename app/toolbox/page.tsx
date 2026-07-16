@@ -7,10 +7,12 @@ export const dynamic = "force-dynamic";
 export default async function ToolboxPage() {
   const db = await createClient();
   // RLS scopes plan_tools/todos to the caller, so usage counts are this user's own.
+  // throwOnError: a failed read must surface an error page, not an empty catalog that
+  // reads as "no tools match" and invites the user to blame their search.
   const [{ data: tools }, { data: planTools }, { data: todos }] = await Promise.all([
-    db.from("tools").select("*").order("name"),
-    db.from("plan_tools").select("tool_id, plan_id"),
-    db.from("todos").select("tool_id, campaign_id"),
+    db.from("tools").select("*").order("name").throwOnError(),
+    db.from("plan_tools").select("tool_id, plan_id").throwOnError(),
+    db.from("todos").select("tool_id, campaign_id").throwOnError(),
   ]);
 
   const usage: Record<string, ToolUsage> = {};

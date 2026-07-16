@@ -172,14 +172,24 @@ async function suggestToolsForPlan(
       })),
     });
 
-    if (rec.tools.length > 0) {
-      await db.from("plan_tools").insert(
-        rec.tools.map((t) => ({
-          plan_id: plan.id,
-          tool_id: catalog[t.tool_index].id,
-          reason: t.reason,
-        })),
-      );
+    // The model can name the same tool twice; plan_tools is unique(plan_id, tool_id), so
+    // an un-deduped batch insert fails wholesale and drops EVERY suggestion for the plan.
+    // Keep the first mention of each tool.
+    const seen = new Set<string>();
+    const rows = rec.tools
+      .filter((t) => {
+        const id = catalog[t.tool_index].id;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .map((t) => ({ plan_id: plan.id, tool_id: catalog[t.tool_index].id, reason: t.reason }));
+
+    if (rows.length > 0) {
+      // insert() doesn't throw without throwOnError(), so the outer catch never sees a
+      // failed insert — check it here or the failure is invisible.
+      const { error } = await db.from("plan_tools").insert(rows);
+      if (error) console.error(`plan_tools insert failed for plan ${plan.id}:`, error.message);
     }
     // Last assignment wins if the model names a todo twice.
     for (const a of rec.todo_tools) {
@@ -254,12 +264,15 @@ async function insertPlansAndTodos(
 async function activeCatalog(
   db: Awaited<ReturnType<typeof createClient>>,
 ): Promise<Pick<Tool, "id" | "name" | "category" | "description">[]> {
-  // Disabled tools are never suggested.
+  // Disabled tools are never suggested. throwOnError so a failed read can't masquerade
+  // as an empty catalog — that would generate (or REGENERATE over) a campaign with no
+  // tools and no error. The callers' try/catch turns the throw into a retry message.
   const { data } = await db
     .from("tools")
     .select("id, name, category, description")
     .neq("status", "disabled")
-    .order("name");
+    .order("name")
+    .throwOnError();
   return (data ?? []) as Pick<Tool, "id" | "name" | "category" | "description">[];
 }
 

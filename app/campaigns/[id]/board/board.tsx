@@ -13,8 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TODO_STATUSES, type Campaign, type Channel, type Plan, type Todo, type TodoStatus, type Tool } from "@/lib/types";
+import {
+  TODO_STATUSES,
+  type Campaign,
+  type Channel,
+  type Plan,
+  type Todo,
+  type TodoStatus,
+  type Tool,
+} from "@/lib/types";
 
+// Column headers use Title Case; the per-card dropdown reuses the shared lowercase labels.
 const COLUMN_LABEL: Record<TodoStatus, string> = {
   backlog: "Backlog",
   in_progress: "In Progress",
@@ -198,7 +207,11 @@ export default function Board({
                         ) : (
                           <span className="text-[11px] italic text-muted-foreground">no tool</span>
                         )}
-                        <Select value={status} onValueChange={(v) => move(todo, String(v) as TodoStatus)}>
+                        <Select
+                          value={status}
+                          items={TODO_STATUSES.map((s) => ({ value: s, label: COLUMN_LABEL[s] }))}
+                          onValueChange={(v) => move(todo, String(v) as TodoStatus)}
+                        >
                           <SelectTrigger
                             size="sm"
                             className="h-7 w-auto gap-1 text-[11px]"
