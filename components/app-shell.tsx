@@ -30,16 +30,17 @@ function Mark() {
   );
 }
 
+// "Activity", not "Analytics": this shows what the AI did on your behalf. Analytics would
+// promise campaign performance — signups, CTR — which needs your own analytics tool, since
+// GrowthOS has no access to your traffic.
 const navItems = [
   { label: "Campaigns", href: "/", icon: Rocket },
   { label: "Toolbox", href: "/toolbox", icon: Wrench },
+  { label: "Activity", href: "/activity", icon: BarChart3 },
 ];
 
-// ponytail: Analytics/Settings aren't built — visible roadmap, not dead links.
-const soonItems = [
-  { label: "Analytics", icon: BarChart3 },
-  { label: "Settings", icon: Settings },
-];
+// ponytail: Settings isn't built — visible roadmap, not a dead link.
+const soonItems = [{ label: "Settings", icon: Settings }];
 
 function Nav({
   showLabels,

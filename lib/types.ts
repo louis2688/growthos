@@ -18,6 +18,41 @@ export const TODO_STATUS_LABEL: Record<TodoStatus, string> = {
   done: "done",
 };
 
+export type AgentRunStatus = "running" | "ok" | "failed";
+
+/** One traced agent call (migration 0010). */
+export type AgentRun = {
+  id: string;
+  campaign_id: string;
+  todo_id: string | null;
+  agent: string;
+  status: AgentRunStatus;
+  started_at: string;
+  finished_at: string | null;
+  duration_ms: number | null;
+  error: string | null;
+  created_at: string;
+};
+
+/**
+ * Human names for the agent keys written to agent_runs.agent. Falls back to the raw key,
+ * so a newly added handler shows up as itself rather than vanishing from the UI.
+ */
+export const AGENT_LABEL: Record<string, string> = {
+  channel_research: "Channel Research",
+  campaign_generator: "Campaign Generator",
+  tool_recommender: "Tool Recommender",
+  post_writer: "AI Post Writer",
+  seo_optimizer: "SEO Optimizer",
+  email_digest: "Email Digest Composer",
+  utm_builder: "Analytics Tracker",
+  launch_timing: "Launch Scheduler",
+};
+
+export function agentLabel(key: string): string {
+  return AGENT_LABEL[key] ?? key;
+}
+
 export type Campaign = {
   id: string;
   user_id: string;
