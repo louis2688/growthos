@@ -23,7 +23,12 @@ export type PostWriterInput = {
   todo: { title: string; description: string };
 };
 
-function buildPrompt(input: PostWriterInput): string {
+/**
+ * Exported so the Mastra implementation runs the identical prompt. This text carries the
+ * disclosure and no-invented-numbers guardrails that evals/cases.ts checks; a second copy
+ * would drift away from the evaluated one without any test noticing.
+ */
+export function buildPrompt(input: PostWriterInput): string {
   return `You are a growth copywriter. Write ONE post, ready to publish as-is.
 
 Product: ${input.productName}
