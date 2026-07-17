@@ -109,7 +109,8 @@ export type ToolHandler =
   | "seo_optimizer"
   | "email_digest"
   | "utm_builder"
-  | "launch_timing";
+  | "launch_timing"
+  | "image_generator";
 
 /** Global catalog row — not scoped to a campaign (domain-model-uml.html). */
 export type Tool = {
@@ -147,6 +148,8 @@ export type Todo = {
   output: string | null;
   /** Which tool actually produced `output` — may differ from tool_id after a reassign. */
   output_tool_id: string | null;
+  /** Public URL of a rendered image (image_generator only); null for every other tool. */
+  output_image_url: string | null;
   tool_id: string | null;
   due_date: string | null; // ISO date (YYYY-MM-DD)
   created_at: string;

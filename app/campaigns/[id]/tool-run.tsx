@@ -91,6 +91,16 @@ export function ToolRun({
             Draft from {producedBy?.name ?? "a removed tool"}
             {stale && (tool ? ` — this todo now uses ${tool.name}` : " — this todo has no tool now")}
           </summary>
+          {todo.output_image_url && (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL; plain
+            // img avoids configuring a remote-image domain for a single bucket.
+            <img
+              src={todo.output_image_url}
+              alt={`Generated image for “${todo.title}”`}
+              className="mx-3 mb-2 max-w-full rounded-lg border"
+              loading="lazy"
+            />
+          )}
           <p className="whitespace-pre-wrap px-3 pb-3 text-sm leading-relaxed">{todo.output}</p>
         </details>
       )}

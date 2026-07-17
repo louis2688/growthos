@@ -12,7 +12,10 @@ import { formatSeoRewrite, optimizeForSeo } from "@/lib/agents/seo-optimizer";
 import { composeEmailDigest, formatEmailDigest } from "@/lib/agents/email-digest";
 import { buildUtm, campaignSlug, formatUtm } from "@/lib/agents/utm-builder";
 import { formatTiming, recommendTiming } from "@/lib/agents/launch-timing";
+import { formatImagePrompt } from "@/lib/agents/image-prompt";
+import { IMAGE_BUCKET, generateImage, imagePath } from "@/lib/agents/image-generator";
 import { traced } from "@/lib/agents/trace";
+import { createServiceClient } from "@/lib/supabase/service";
 import { createClient, currentUser } from "@/lib/supabase/server";
 import type { Channel, Goal, Priority, Tool, TodoStatus } from "@/lib/types";
 
@@ -581,17 +584,49 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
               }),
             );
 
+          case "image_generator": {
+            // Unlike every other handler, this produces a binary. Upload it here (inside the
+            // trace, so a failed render/upload is recorded), then return the text artifact —
+            // prompt, alt, notes — which is what todos.output stores. The image itself is
+            // reached via output_image_url, set on the update below.
+            //
+            // Service-role client for the upload: @supabase/ssr doesn't attach the user's JWT
+            // to storage requests (only to DB ones), so the request-scoped `db` uploads as
+            // anon and the bucket's RLS rejects it. Authorization is already done — `todo` was
+            // read through RLS above, so we're only here for a todo this user owns, and the
+            // path is built from that todo's ids. See lib/supabase/service.ts.
+            const { prompt, bytes } = await generateImage({ ...shared, channel });
+            const { error: upErr } = await createServiceClient()
+              .storage.from(IMAGE_BUCKET)
+              .upload(imagePath(todo.campaign_id, todo.id), bytes, {
+                contentType: "image/jpeg",
+                upsert: true, // a re-run overwrites the same path rather than orphaning the old one
+                cacheControl: "60", // low, so a re-run isn't masked by a stale CDN copy
+              });
+            if (upErr) throw new Error(`Image upload failed: ${upErr.message}`);
+            return formatImagePrompt(prompt);
+          }
+
           default:
             throw new Error(`No handler wired for ${(tool as Tool).name}.`);
         }
       },
     );
 
+    // The image handler uploaded to a deterministic path; getPublicUrl just derives its URL
+    // (no I/O). Set for image_generator, cleared to null for every other handler so a todo
+    // reassigned from the image tool to a text tool doesn't keep showing a stale picture.
+    const imageUrl =
+      (tool as Tool).handler === "image_generator"
+        ? db.storage.from(IMAGE_BUCKET).getPublicUrl(imagePath(todo.campaign_id, todo.id)).data
+            .publicUrl
+        : null;
+
     // Stamp provenance with the artifact so the UI can never caption a draft with a
     // tool that didn't write it.
     const { error } = await db
       .from("todos")
-      .update({ output, output_tool_id: todo.tool_id })
+      .update({ output, output_tool_id: todo.tool_id, output_image_url: imageUrl })
       .eq("id", todoId);
     if (error) throw new Error(error.message);
   } catch (err) {
