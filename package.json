@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run --passWithNoTests",
-    "evals": "tsx evals/run.mts"
+    "evals": "tsx --env-file-if-exists=.env.local evals/run.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
