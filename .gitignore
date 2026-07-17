@@ -46,3 +46,4 @@ next-env.d.ts
 # mastra experiment sandbox (not part of the app)
 growthos-mastra/
 .tokensave
+.agents/
