@@ -29,6 +29,7 @@ import type {
   Todo,
   Tool,
 } from "@/lib/types";
+import { CampaignDanger } from "@/components/campaign-danger";
 import { AddTodoDialog, EditTodoDialog } from "./todo-dialogs";
 import { ToolRun } from "./tool-run";
 
@@ -375,6 +376,8 @@ export default function Dashboard({
           )}
         </aside>
       </div>
+
+      <CampaignDanger campaignId={campaign.id} campaignName={campaign.name} />
 
       {editing && (
         <EditTodoDialog

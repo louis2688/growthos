@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import { stepPath } from "@/lib/wizard";
 import { wizardStep, type Campaign, type Channel, type Goal } from "@/lib/types";
+import { ArchivedCampaigns } from "./archived-campaigns";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,6 @@ export default async function Home() {
       db
         .from("campaigns")
         .select("*")
-        .neq("status", "archived")
         .order("created_at", { ascending: false })
         .throwOnError(),
       db
@@ -34,9 +34,11 @@ export default async function Home() {
       db.from("channels").select("campaign_id, name").eq("selected", true).throwOnError(),
     ]);
 
-  const all = (campaigns ?? []) as Campaign[];
-  // The campaigns read excludes archived, but todos/channels don't — scope the stats to
-  // visible campaigns so archived work doesn't inflate "Todos done" / "across N channels".
+  const everything = (campaigns ?? []) as Campaign[];
+  const archived = everything.filter((c) => c.status === "archived");
+  // Archived campaigns are fetched (so they can be restored) but excluded from the list and
+  // from every stat — archived work must not inflate "Todos done" / "across N channels".
+  const all = everything.filter((c) => c.status !== "archived");
   const visibleIds = new Set(all.map((c) => c.id));
 
   const goalByCampaign = new Map(
@@ -176,6 +178,8 @@ export default async function Home() {
           })}
         </div>
       )}
+
+      <ArchivedCampaigns campaigns={archived} />
     </main>
   );
 }

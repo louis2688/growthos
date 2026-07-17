@@ -413,6 +413,50 @@ export async function regenerateCampaign(
   revalidatePath("/");
 }
 
+/* ---------- Campaign lifecycle ---------- */
+
+/**
+ * Hides a campaign without destroying it. Only offered on the dashboard, which only renders
+ * for an active campaign — so restoreCampaign can always safely put it back to 'active'
+ * without needing to remember what it was.
+ */
+export async function archiveCampaign(campaignId: string): Promise<{ error: string } | undefined> {
+  const db = await createClient();
+  const { error } = await db
+    .from("campaigns")
+    .update({ status: "archived", updated_at: new Date().toISOString() })
+    .eq("id", campaignId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  redirect("/");
+}
+
+export async function restoreCampaign(campaignId: string): Promise<{ error: string } | undefined> {
+  const db = await createClient();
+  const { error } = await db
+    .from("campaigns")
+    .update({ status: "active", updated_at: new Date().toISOString() })
+    .eq("id", campaignId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+}
+
+/**
+ * Permanent. Goals, channels, plans, todos, plan_tools and agent_runs all cascade from
+ * campaigns, so this removes the whole tree — including any drafts a tool produced.
+ * RLS scopes the delete, so a campaign the caller doesn't own simply matches nothing.
+ */
+export async function deleteCampaign(campaignId: string): Promise<{ error: string } | undefined> {
+  const db = await createClient();
+  const { error } = await db.from("campaigns").delete().eq("id", campaignId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  redirect("/");
+}
+
 /* ---------- Running a todo's tool ---------- */
 
 /**

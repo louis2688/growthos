@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { WizardStepper } from "@/components/wizard-stepper";
+import { CampaignDanger } from "@/components/campaign-danger";
 import type { Campaign, Goal } from "@/lib/types";
 
 export default function AnalysisForm({ campaign, goal }: { campaign: Campaign; goal: Goal }) {
@@ -97,6 +98,8 @@ export default function AnalysisForm({ campaign, goal }: { campaign: Campaign; g
           </form>
         </CardContent>
       </Card>
+
+      <CampaignDanger campaignId={campaign.id} campaignName={campaign.name} canArchive={false} />
     </main>
   );
 }

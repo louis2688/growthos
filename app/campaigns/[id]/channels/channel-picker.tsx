@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { WizardStepper } from "@/components/wizard-stepper";
+import { CampaignDanger } from "@/components/campaign-danger";
 import type { Campaign, Channel, Confidence, Goal } from "@/lib/types";
 
 const confidencePill: Record<Confidence, string> = {
@@ -103,6 +104,8 @@ export default function ChannelPicker({
           )}
         </div>
       </form>
+
+      <CampaignDanger campaignId={campaign.id} campaignName={campaign.name} canArchive={false} />
     </main>
   );
 }

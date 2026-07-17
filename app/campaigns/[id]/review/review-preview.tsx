@@ -6,6 +6,7 @@ import { backToChannels, confirmCampaign } from "@/app/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WizardStepper } from "@/components/wizard-stepper";
+import { CampaignDanger } from "@/components/campaign-danger";
 import type { Campaign, Channel, Goal, Plan, PlanTool, Priority, Todo, Tool } from "@/lib/types";
 
 const priorityPill: Record<Priority, string> = {
@@ -163,6 +164,8 @@ export default function ReviewPreview({
           {pending ? "Creating…" : "Generate campaign ✓"}
         </Button>
       </div>
+
+      <CampaignDanger campaignId={campaign.id} campaignName={campaign.name} canArchive={false} />
     </main>
   );
 }
