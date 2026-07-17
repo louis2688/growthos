@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, deadlineSignal, oneLine } from "./run";
+import { MODEL, anthropic, deadlineSignal, oneLine, recordUsage } from "./run";
 
 export const LaunchTimingSchema = z.object({
   window: z
@@ -78,6 +78,9 @@ export async function recommendTiming(input: LaunchTimingInput): Promise<LaunchT
       },
       { signal },
     );
+    // Before the pause check, not after: a paused turn is billed like any other, so
+    // recording only the final response would hide most of a multi-pause run's spend.
+    recordUsage(response.usage);
 
     if (response.stop_reason === "pause_turn") {
       messages = [...messages, { role: "assistant", content: response.content }];

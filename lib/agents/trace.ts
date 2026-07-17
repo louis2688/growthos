@@ -1,3 +1,4 @@
+import { newUsage, withUsage } from "./run";
 import type { createClient } from "@/lib/supabase/server";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
@@ -24,6 +25,9 @@ function message(err: unknown): string {
  */
 export async function traced<T>(db: Db, ctx: TraceContext, fn: () => Promise<T>): Promise<T> {
   const startedAt = Date.now();
+  // Accumulates across every API call the agent makes, including the paused turns in
+  // channel research's pause/resume loop.
+  const usage = newUsage();
 
   let runId: string | undefined;
   try {
@@ -52,6 +56,9 @@ export async function traced<T>(db: Db, ctx: TraceContext, fn: () => Promise<T>)
           error: error?.slice(0, 2000) ?? null,
           finished_at: new Date().toISOString(),
           duration_ms: Date.now() - startedAt,
+          input_tokens: usage.input_tokens,
+          output_tokens: usage.output_tokens,
+          web_search_requests: usage.web_search_requests,
         })
         .eq("id", runId);
     } catch {
@@ -60,10 +67,13 @@ export async function traced<T>(db: Db, ctx: TraceContext, fn: () => Promise<T>)
   }
 
   try {
-    const result = await fn();
+    const result = await withUsage(usage, fn);
     await finish("ok");
     return result;
   } catch (err) {
+    // Usage is written on this path too: a run that dies at the 240s deadline still burned
+    // every token and paid search it made up to that point. Recording spend only for runs
+    // that succeeded would hide the most expensive failures in the app.
     await finish("failed", message(err));
     throw err;
   }

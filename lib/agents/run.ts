@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import Anthropic from "@anthropic-ai/sdk";
 
 export const MODEL = "claude-opus-4-8";
@@ -5,6 +6,56 @@ export const MODEL = "claude-opus-4-8";
 // Lazy so importing an agent module (e.g. in tests) never requires the API key.
 export function anthropic() {
   return new Anthropic();
+}
+
+/** What one agent run spent. Searches are counted, not priced — see lib/pricing.ts. */
+export type AgentUsage = {
+  input_tokens: number;
+  output_tokens: number;
+  web_search_requests: number;
+};
+
+export function newUsage(): AgentUsage {
+  return { input_tokens: 0, output_tokens: 0, web_search_requests: 0 };
+}
+
+/**
+ * Per-run usage accumulator.
+ *
+ * AsyncLocalStorage rather than a module-level counter because suggestToolsForPlan fans out
+ * one tool_recommender call per plan concurrently — a shared counter would bill every plan's
+ * tokens to whichever run happened to finish last. Each traced() scope gets its own.
+ */
+const usageStore = new AsyncLocalStorage<AgentUsage>();
+
+export function withUsage<T>(usage: AgentUsage, fn: () => Promise<T>): Promise<T> {
+  return usageStore.run(usage, fn);
+}
+
+/**
+ * Adds one API response to the enclosing withUsage() scope; a no-op outside one, so agents
+ * called directly from tests and evals still work untracked.
+ *
+ * Call this for EVERY response, including the paused ones inside a pause_turn loop — a
+ * paused turn is billed like any other, so recording only the final one would undercount
+ * channel research (up to 5 billed calls) by most of its actual spend.
+ *
+ * Structural param: the SDK's Usage isn't exported at the top level, and Anthropic.Usage
+ * satisfies this shape.
+ *
+ * ponytail: we never set cache_control, so usage.cache_* is always null and input_tokens is
+ * the whole input. Add prompt caching and this needs the discounted read/write rates too.
+ */
+export function recordUsage(usage: {
+  input_tokens: number;
+  output_tokens: number;
+  server_tool_use?: { web_search_requests: number } | null;
+}): void {
+  const acc = usageStore.getStore();
+  if (!acc) return;
+  acc.input_tokens += usage.input_tokens;
+  acc.output_tokens += usage.output_tokens;
+  acc.web_search_requests += usage.server_tool_use?.web_search_requests ?? 0;
 }
 
 /**

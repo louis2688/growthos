@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { formatTokens, formatUsd, measured, spendOf } from "@/lib/pricing";
 import { agentLabel, type AgentRun } from "@/lib/types";
 
 /** p50 is the honest summary for latency; a mean gets dragged around by one slow web search. */
@@ -59,9 +60,16 @@ export default function Activity({
         rate: done.length === 0 ? null : Math.round((good.length / done.length) * 100),
         p50: percentile(ds, 50),
         p95: percentile(ds, 95),
+        // Spend covers every run, not just the successful ones: a run that died at the
+        // deadline still burned its tokens, and hiding that would make the agents that fail
+        // expensively look cheap.
+        spend: measured(rs).length === 0 ? null : spendOf(rs),
       };
     })
     .sort((a, b) => b.runs - a.runs);
+
+  const total = spendOf(runs);
+  const unmeasured = runs.length - measured(runs).length;
 
   const stats = [
     { k: "Agent runs", v: String(runs.length), d: runs.length >= 200 ? "most recent 200" : "all time" },
@@ -71,6 +79,17 @@ export default function Activity({
       d: `${failures.length} failed`,
     },
     { k: "Median run", v: seconds(percentile(allDurations, 50)), d: `95th: ${seconds(percentile(allDurations, 95))}` },
+    {
+      k: "Estimated spend",
+      v: measured(runs).length === 0 ? "—" : formatUsd(total.cost),
+      // The caveat that makes the number wrong ranks above the one that just adds detail.
+      d:
+        measured(runs).length === 0
+          ? "no runs measured yet"
+          : unmeasured > 0
+            ? `${unmeasured} earlier run${unmeasured === 1 ? "" : "s"} not counted`
+            : `${formatTokens(total.tokens)} tokens`,
+    },
   ];
 
   return (
@@ -98,7 +117,7 @@ export default function Activity({
         </div>
       ) : (
         <>
-          <div className="mb-6 grid gap-3 sm:grid-cols-3">
+          <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((s) => (
               <div key={s.k} className="glass rounded-2xl border p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -123,6 +142,8 @@ export default function Activity({
                     <th className="px-4 py-2 text-right font-medium">Succeeded</th>
                     <th className="px-4 py-2 text-right font-medium">Median</th>
                     <th className="px-4 py-2 text-right font-medium">95th</th>
+                    <th className="px-4 py-2 text-right font-medium">Tokens</th>
+                    <th className="px-4 py-2 text-right font-medium">Cost</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -143,11 +164,29 @@ export default function Activity({
                       <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
                         {seconds(a.p95)}
                       </td>
+                      <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
+                        {a.spend ? formatTokens(a.spend.tokens) : "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-medium tabular-nums">
+                        {a.spend ? formatUsd(a.spend.cost) : <span className="text-muted-foreground">—</span>}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            <p className="border-t px-4 py-3 text-xs text-muted-foreground">
+              Cost is an estimate: token counts priced at Claude Opus 4.8&apos;s current published
+              rates ($5 per million in, $25 per million out).{" "}
+              {total.searches > 0 && (
+                <>
+                  It excludes the {total.searches} web search
+                  {total.searches === 1 ? "" : "es"} run by Channel Research and Launch Timing —
+                  those are billed per request, and GrowthOS has no rate for them to quote.{" "}
+                </>
+              )}
+              Your Anthropic Console is the source of truth for what you were actually charged.
+            </p>
           </section>
 
           <section className="glass overflow-hidden rounded-2xl border">

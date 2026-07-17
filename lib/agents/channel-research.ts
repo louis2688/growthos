@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, deadlineSignal } from "./run";
+import { MODEL, anthropic, deadlineSignal, recordUsage } from "./run";
 import type { GoalAnalysis } from "./goal-analyzer";
 
 export const ChannelResearchSchema = z.object({
@@ -75,6 +75,10 @@ export async function researchChannels(input: ChannelResearchInput): Promise<Cha
       },
       { signal },
     );
+    // Before the pause check, not after: web search pauses this turn repeatedly, and every
+    // paused response is billed. Recording only the final one would report the app's most
+    // expensive agent as its cheapest.
+    recordUsage(response.usage);
 
     if (response.stop_reason === "pause_turn") {
       messages = [...messages, { role: "assistant", content: response.content }];

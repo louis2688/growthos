@@ -1,6 +1,6 @@
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, withRetry } from "./run";
+import { MODEL, anthropic, recordUsage, withRetry } from "./run";
 
 export const ToolRecommendationSchema = z.object({
   tools: z
@@ -71,6 +71,7 @@ export async function recommendTools(input: RecommenderInput): Promise<ToolRecom
       output_config: { format: zodOutputFormat(ToolRecommendationSchema) },
       messages: [{ role: "user", content: buildPrompt(input) }],
     });
+    recordUsage(response.usage);
     if (!response.parsed_output) throw new Error("Model returned no parsable tool recommendation");
 
     const rec = response.parsed_output;

@@ -1,6 +1,6 @@
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, withRetry } from "./run";
+import { MODEL, anthropic, recordUsage, withRetry } from "./run";
 
 export const EmailDigestSchema = z.object({
   subject: z.string().describe("Subject line — specific, not a teaser"),
@@ -67,6 +67,7 @@ export async function composeEmailDigest(input: EmailDigestInput): Promise<Email
       output_config: { format: zodOutputFormat(EmailDigestSchema) },
       messages: [{ role: "user", content: buildPrompt(input) }],
     });
+    recordUsage(response.usage);
     if (!response.parsed_output) throw new Error("Model returned no parsable email digest");
     if (!response.parsed_output.body.trim()) throw new Error("Model returned an empty email body");
     return response.parsed_output;

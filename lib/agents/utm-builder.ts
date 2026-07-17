@@ -1,6 +1,6 @@
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, withRetry } from "./run";
+import { MODEL, anthropic, recordUsage, withRetry } from "./run";
 
 /**
  * UTM values must be lowercase and URL-safe, or analytics tools split one link across buckets.
@@ -86,6 +86,7 @@ export async function buildUtm(input: UtmBuilderInput): Promise<UtmPlan> {
       output_config: { format: zodOutputFormat(UtmPlanSchema) },
       messages: [{ role: "user", content: buildPrompt(input) }],
     });
+    recordUsage(response.usage);
     if (!response.parsed_output) throw new Error("Model returned no parsable UTM plan");
     return response.parsed_output;
   });

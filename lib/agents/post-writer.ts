@@ -1,6 +1,6 @@
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, withRetry } from "./run";
+import { MODEL, anthropic, recordUsage, withRetry } from "./run";
 
 export const PostDraftSchema = z.object({
   title: z
@@ -59,6 +59,7 @@ export async function writePost(input: PostWriterInput): Promise<PostDraft> {
       output_config: { format: zodOutputFormat(PostDraftSchema) },
       messages: [{ role: "user", content: buildPrompt(input) }],
     });
+    recordUsage(response.usage);
     if (!response.parsed_output) throw new Error("Model returned no parsable post draft");
     if (!response.parsed_output.body.trim()) throw new Error("Model returned an empty post body");
     return response.parsed_output;

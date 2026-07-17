@@ -20,7 +20,7 @@ export const TODO_STATUS_LABEL: Record<TodoStatus, string> = {
 
 export type AgentRunStatus = "running" | "ok" | "failed";
 
-/** One traced agent call (migration 0010). */
+/** One traced agent call (migration 0010; usage columns 0011). */
 export type AgentRun = {
   id: string;
   campaign_id: string;
@@ -32,6 +32,11 @@ export type AgentRun = {
   duration_ms: number | null;
   error: string | null;
   created_at: string;
+  // Null on runs traced before 0011, and on runs still in flight — "not measured", which is
+  // not the same as zero. Anything summing these must skip nulls, not coerce them to 0.
+  input_tokens: number | null;
+  output_tokens: number | null;
+  web_search_requests: number | null;
 };
 
 /**
