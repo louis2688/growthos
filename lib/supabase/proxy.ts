@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // "/tools/" keeps the trailing slash on purpose: startsWith("/tools") would also match the
 // authed "/toolbox" catalog and un-gate it. Public free tools live under /tools/<name>.
-const PUBLIC_PATHS = ["/login", "/auth", "/tools/"];
+const PUBLIC_PATHS = ["/login", "/auth", "/tools/", "/pricing"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
