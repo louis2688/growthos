@@ -1,7 +1,12 @@
 import LoginForm from "./login-form";
 import { BrandMark } from "@/components/brand-mark";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
+  const { mode } = await searchParams;
   return (
     <main className="grid min-h-dvh place-items-center p-4">
       <div className="glass grid w-full max-w-4xl overflow-hidden rounded-2xl border shadow-xl shadow-primary/10 md:grid-cols-[1.05fr_1fr]">
@@ -37,7 +42,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <LoginForm />
+        <LoginForm initialMode={mode === "signup" ? "signup" : "signin"} />
       </div>
     </main>
   );

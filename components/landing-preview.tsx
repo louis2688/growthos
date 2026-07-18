@@ -160,7 +160,7 @@ export default function LandingPreview() {
               <p className="mt-0.5 text-xs text-muted-foreground">
                 This preview isn&apos;t saved — create a free account to build the full campaign.
               </p>
-              <Link href="/login" className={`${buttonVariants({ size: "sm" })} mt-2.5`}>
+              <Link href="/login?mode=signup" className={`${buttonVariants({ size: "sm" })} mt-2.5`}>
                 Sign up free <ArrowRight className="ml-1 size-3.5" aria-hidden />
               </Link>
             </div>

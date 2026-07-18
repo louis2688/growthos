@@ -98,7 +98,7 @@ export default function Landing() {
             <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
               Log in
             </Link>
-            <Link href="/login" className={buttonVariants({ size: "sm" })}>
+            <Link href="/login?mode=signup" className={buttonVariants({ size: "sm" })}>
               Start free
             </Link>
           </nav>
@@ -125,7 +125,7 @@ export default function Landing() {
               native, value-first copy that passes strict community guardrails.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/login" className={buttonVariants({ size: "lg" })}>
+              <Link href="/login?mode=signup" className={buttonVariants({ size: "lg" })}>
                 Build your first campaign — free <ArrowRight className="ml-1.5 size-4" aria-hidden />
               </Link>
               <Link
@@ -273,7 +273,7 @@ export default function Landing() {
           audience is in the next few minutes.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <Link href="/login" className={buttonVariants({ size: "lg" })}>
+          <Link href="/login?mode=signup" className={buttonVariants({ size: "lg" })}>
             Build your first campaign — free <ArrowRight className="ml-1.5 size-4" aria-hidden />
           </Link>
           <Link href="/pricing" className={buttonVariants({ variant: "outline", size: "lg" })}>

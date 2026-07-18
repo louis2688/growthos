@@ -130,7 +130,7 @@ export default function PricingPage() {
             </ul>
 
             <Link
-              href="/login"
+              href="/login?mode=signup"
               className={`${buttonVariants({ variant: t.highlighted ? "default" : "outline" })} mt-6`}
             >
               Start free →

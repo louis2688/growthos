@@ -6,21 +6,28 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { consumeResetQuota } from "@/lib/rate-limit";
 
-export type AuthState = { error: string; email: string } | { sent: string } | null;
+export type AuthState = { error: string; email: string; name: string } | { sent: string } | null;
 
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
   const mode = String(formData.get("mode") ?? "signin");
-  if (!email || !password) return { error: "Enter your email and password.", email };
+  if (!email || !password) return { error: "Enter your email and password.", email, name };
 
   const supabase = await createClient();
   const { error } =
     mode === "signup"
-      ? await supabase.auth.signUp({ email, password })
+      ? // full_name lands in user_metadata — the app shell already displays it (falling back to
+        // the email prefix when absent, e.g. for Google sign-ins that don't provide one).
+        await supabase.auth.signUp({
+          email,
+          password,
+          options: name ? { data: { full_name: name } } : undefined,
+        })
       : await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) return { error: error.message, email };
+  if (error) return { error: error.message, email, name };
 
   // Supabase requires email confirmation on sign-up unless disabled in project settings.
   if (mode === "signup") {

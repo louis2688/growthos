@@ -7,9 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function LoginForm() {
+export default function LoginForm({
+  initialMode = "signin",
+}: {
+  /** "signup" when reached via a conversion CTA (/login?mode=signup) — new visitors should see
+   * the create-account view, not "Welcome back". */
+  initialMode?: "signin" | "signup";
+}) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(signIn, null);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
   const signup = mode === "signup";
   const values = state && "email" in state ? state : null;
 
@@ -33,6 +39,19 @@ export default function LoginForm() {
         <>
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="mode" value={mode} />
+            {signup && (
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Your name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  autoComplete="name"
+                  required
+                  placeholder="Alex Rivera"
+                  defaultValue={values?.name ?? ""}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
