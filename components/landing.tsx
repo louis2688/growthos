@@ -159,7 +159,7 @@ export default function Landing() {
           <h2 className="text-balance font-heading text-3xl font-bold">
             You spent months building it. Why launch it to zero views?
           </h2>
-          <p className="mt-3 text-sm text-muted-foreground">
+          <p className="mt-3 text-balance text-sm text-muted-foreground">
             Writing code is easy. Distribution is hard. “Growth-hack your way to success” leaves you
             with empty spreadsheets and blank-page syndrome.
           </p>
@@ -181,8 +181,8 @@ export default function Landing() {
       <section id="how" className="border-y bg-primary/[0.03]">
         <div className="mx-auto max-w-6xl px-4 py-16">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-heading text-3xl font-bold">Three steps to your first users.</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <h2 className="text-balance font-heading text-3xl font-bold">Three steps to your first users.</h2>
+            <p className="mt-3 text-balance text-sm text-muted-foreground">
               GrowthOS turns a high-level goal into a structured, trackable workspace of
               research-validated campaigns.
             </p>
@@ -204,7 +204,7 @@ export default function Landing() {
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-4 py-16">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-heading text-3xl font-bold">No fluff. Just structured execution.</h2>
+          <h2 className="text-balance font-heading text-3xl font-bold">No fluff. Just structured execution.</h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {features.map((f) => (
@@ -223,8 +223,8 @@ export default function Landing() {
       <section className="border-y bg-primary/[0.03]">
         <div className="mx-auto max-w-4xl px-4 py-16">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-heading text-3xl font-bold">How to promote without getting banned.</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <h2 className="text-balance font-heading text-3xl font-bold">How to promote without getting banned.</h2>
+            <p className="mt-3 text-balance text-sm text-muted-foreground">
               Same product, same subreddit. The difference is what gets you upvoted versus removed by
               a moderator.
             </p>
@@ -268,7 +268,7 @@ export default function Landing() {
         <h2 className="text-balance font-heading text-3xl font-bold sm:text-4xl">
           Your product deserves to be heard.
         </h2>
-        <p className="mx-auto mt-3 max-w-prose text-sm text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-prose text-balance text-sm text-muted-foreground">
           Free while we&apos;re in early access — no card, no catch. Type a goal and see where your
           audience is in the next few minutes.
         </p>

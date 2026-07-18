@@ -85,14 +85,14 @@ export default function PricingPage() {
         <h1 className="mt-2 text-balance font-heading text-3xl font-bold sm:text-4xl">
           Simple pricing. Free while we build.
         </h1>
-        <p className="mx-auto mt-3 max-w-prose text-sm text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-prose text-balance text-sm text-muted-foreground">
           These are the plans we&apos;re building toward. Right now GrowthOS is in early access and
           everything is free — the prices below are the direction, not a bill.
         </p>
       </div>
 
       {/* Honesty banner: no billing exists yet. Stated plainly rather than hidden. */}
-      <div className="mx-auto mb-8 max-w-2xl rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 text-center text-sm">
+      <div className="mx-auto mb-8 max-w-2xl rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 text-balance text-center text-sm">
         <span className="font-medium">Early access — everything is free today.</span>{" "}
         <span className="text-muted-foreground">
           There&apos;s no billing in the product yet, so nothing here can charge you. We&apos;ll say
@@ -139,7 +139,7 @@ export default function PricingPage() {
         ))}
       </div>
 
-      <p className="mt-4 text-center text-xs text-muted-foreground">
+      <p className="mt-4 text-balance text-center text-xs text-muted-foreground">
         Agency and team plans are on the way — nothing to buy yet.
       </p>
 

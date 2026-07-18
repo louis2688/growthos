@@ -22,7 +22,7 @@ export default function SubredditFinderPage() {
         <h1 className="mt-2 text-balance font-heading text-3xl font-bold">
           Find the communities your audience is actually in
         </h1>
-        <p className="mx-auto mt-3 max-w-prose text-sm text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-prose text-balance text-sm text-muted-foreground">
           Describe your product. GrowthOS runs a live web search to surface the specific
           subreddits, communities, and directories where those people are active right now — not a
           stale, generic list. Then you go post where it counts.
@@ -31,7 +31,7 @@ export default function SubredditFinderPage() {
 
       <FinderForm />
 
-      <p className="mx-auto mt-8 max-w-prose text-center text-xs text-muted-foreground">
+      <p className="mx-auto mt-8 max-w-prose text-balance text-center text-xs text-muted-foreground">
         Results come from live search and the model&apos;s read of it — verify a community is a fit
         and read its rules before posting. GrowthOS never posts for you.
       </p>
