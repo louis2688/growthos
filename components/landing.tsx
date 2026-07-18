@@ -12,32 +12,12 @@ import {
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import LandingPreview from "@/components/landing-preview";
+import { BrandMark } from "@/components/brand-mark";
 
 // The public marketing homepage, shown by app/page.tsx to logged-out visitors (the proxy exempts
 // "/"). Built from docs/plans/copywriting.md, minus the parts the product's own honesty guardrails
 // forbid: no invented testimonials or metrics, no "auto-publish" claim. Pricing + the full FAQ live
 // on /pricing; this links there rather than duplicating them.
-
-function Mark() {
-  return (
-    <span className="grid size-8 flex-none place-items-center rounded-lg bg-gradient-to-br from-primary to-brand-pink text-white">
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-      >
-        <path d="M3 17l6-6 4 4 8-8" />
-        <path d="M14 7h7v7" />
-      </svg>
-    </span>
-  );
-}
 
 const pains = [
   {
@@ -100,7 +80,7 @@ export default function Landing() {
       <header className="glass sticky top-0 z-40 border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2.5 font-heading text-lg font-bold">
-            <Mark />
+            <BrandMark />
             GrowthOS
           </Link>
           <nav className="flex items-center gap-1.5">
@@ -307,7 +287,7 @@ export default function Landing() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row">
           <Link href="/" className="flex items-center gap-2.5 font-heading font-bold">
-            <Mark />
+            <BrandMark />
             GrowthOS
           </Link>
           <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">

@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 // Site-wide share-card image (launch traffic is literally links on X/Reddit/PH — without this
 // every share renders a bare grey card). Generated at build; satori supports flexbox only.
@@ -6,7 +8,12 @@ export const alt = "GrowthOS — type a goal, get a growth campaign";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function Image() {
+export default async function Image() {
+  // The real brand mark (Dave's logo, purple colorway) — embedded as a data URI since satori
+  // can't fetch relative URLs at build time.
+  const mark = await readFile(join(process.cwd(), "public/brand/mark.png"));
+  const markSrc = `data:image/png;base64,${mark.toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -33,22 +40,11 @@ export default function Image() {
               width: 64,
               height: 64,
               borderRadius: 16,
-              backgroundImage: "linear-gradient(135deg, #7c3aed, #ec4899)",
+              backgroundColor: "#ffffff",
             }}
           >
-            <svg
-              width="34"
-              height="34"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 17l6-6 4 4 8-8" />
-              <path d="M14 7h7v7" />
-            </svg>
+            {/* eslint-disable-next-line @next/next/no-img-element -- satori requires plain img */}
+            <img src={markSrc} alt="" width={44} height={44} />
           </div>
           <div style={{ display: "flex", fontSize: 44, fontWeight: 700 }}>GrowthOS</div>
         </div>

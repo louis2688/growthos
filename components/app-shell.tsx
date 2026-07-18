@@ -7,28 +7,8 @@ import { BarChart3, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Rocket, Setting
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BrandMark } from "@/components/brand-mark";
 import { signOut } from "@/app/login/actions";
-
-function Mark() {
-  return (
-    <span className="grid size-8 flex-none place-items-center rounded-lg bg-gradient-to-br from-primary to-brand-pink text-white">
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-      >
-        <path d="M3 17l6-6 4 4 8-8" />
-        <path d="M14 7h7v7" />
-      </svg>
-    </span>
-  );
-}
 
 // "Activity", not "Analytics": this shows what the AI did on your behalf. Analytics would
 // promise campaign performance — signups, CTR — which needs your own analytics tool, since
@@ -153,7 +133,7 @@ export default function AppShell({
       >
         <div className={`flex items-center pb-5 ${collapsed ? "justify-center" : "gap-2.5 px-1"}`}>
           <Link href="/" className="flex items-center gap-2.5 font-heading text-lg font-bold">
-            <Mark />
+            <BrandMark />
             {!collapsed && <span>GrowthOS</span>}
           </Link>
         </div>
@@ -181,7 +161,7 @@ export default function AppShell({
             onClick={() => setMobileOpen(false)}
             className="flex items-center gap-2.5 font-heading text-lg font-bold"
           >
-            <Mark />
+            <BrandMark />
             GrowthOS
           </Link>
           <Button

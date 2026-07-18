@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { BrandMark } from "@/components/brand-mark";
 
 export const metadata: Metadata = {
   title: "Pricing — GrowthOS",
@@ -75,22 +76,7 @@ export default function PricingPage() {
     <main className="mx-auto w-full max-w-5xl px-4 py-14">
       <div className="mb-8 flex justify-center">
         <Link href="/" className="flex items-center gap-2 font-heading text-lg font-bold">
-          <span className="grid size-7 place-items-center rounded-lg bg-gradient-to-br from-primary to-brand-pink text-white">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M3 17l6-6 4 4 8-8" />
-              <path d="M14 7h7v7" />
-            </svg>
-          </span>
+          <BrandMark className="size-7" />
           GrowthOS
         </Link>
       </div>
