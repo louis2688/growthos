@@ -18,9 +18,11 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  // The production domain (Dave's, DNS on Cloudflare). Without metadataBase, every relative
-  // OG/twitter image URL resolves against localhost/preview URLs and share cards break.
-  metadataBase: new URL("https://launchlift.app"),
+  // The production domain (Dave's, DNS on Cloudflare). www, not apex: Vercel serves production
+  // on www.launchlift.app with the apex 308-redirecting to it, so canonical/OG URLs must match
+  // or every scraper eats a redirect. Without metadataBase, relative OG image URLs resolve
+  // against localhost/preview URLs and share cards break.
+  metadataBase: new URL("https://www.launchlift.app"),
   title: "GrowthOS",
   description:
     "Type a goal. Get a growth campaign — channels found by live web search, prioritized todos, and community-safe copy.",
