@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { researchChannels, type ChannelResearch } from "@/lib/agents/channel-research";
 import { consumeSearchQuota } from "@/lib/rate-limit";
 
@@ -26,15 +25,19 @@ export async function findChannels(
   if (!values.name || !values.description) {
     return { values, error: "Add your product name and what it does." };
   }
-  // Bound the prompt: an oversized paste is both a cost and an abuse vector.
-  if (values.description.length > MAX_DESCRIPTION || values.audience.length > MAX_AUDIENCE) {
+  // Bound the prompt: an oversized paste is both a cost and an abuse vector. Enforced
+  // server-side per field (the client maxLength doesn't stop a scripted POST).
+  if (values.description.length > MAX_DESCRIPTION) {
     return { values, error: `Keep the description under ${MAX_DESCRIPTION} characters.` };
   }
+  if (values.audience.length > MAX_AUDIENCE) {
+    return { values, error: `Keep the audience under ${MAX_AUDIENCE} characters.` };
+  }
 
-  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   let verdict;
   try {
-    verdict = await consumeSearchQuota(ip);
+    // Derives + keys the caller's IP itself, on an unspoofable header — see lib/rate-limit.ts.
+    verdict = await consumeSearchQuota();
   } catch {
     // Fail CLOSED: a rate-limit backend blip must not become an unmetered door to the paid
     // search agent. Better a "try again" than an uncapped bill.
@@ -45,8 +48,8 @@ export async function findChannels(
       values,
       error:
         verdict.scope === "ip"
-          ? "You've used today's free searches. Come back tomorrow, or start a free campaign to run more."
-          : "The free finder has hit today's overall limit. Please try again tomorrow.",
+          ? "You've used today's free AI runs (the finder and the homepage preview share them). Create a free account to keep going — campaigns there aren't limited like this."
+          : "Our free tools have hit today's overall limit. Please try again tomorrow — or sign up free.",
     };
   }
 

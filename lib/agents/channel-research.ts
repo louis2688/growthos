@@ -52,15 +52,22 @@ knowledge but mark those confidence "low".`;
 // web_search_20250305, not _20260209: Haiku only supports the older tool variant (verified).
 const tools = [{ type: "web_search_20250305" as const, name: "web_search" as const, max_uses: 4 }];
 
-export async function researchChannels(input: ChannelResearchInput): Promise<ChannelResearch> {
+export async function researchChannels(
+  input: ChannelResearchInput,
+  // deadlineMs: callers that run ANOTHER agent in the same function invocation (the homepage
+  // preview chains goal analysis first) must pass their REMAINING budget — the default 240s
+  // assumes this agent has the whole 300s function to itself, and a fresh 240s started after a
+  // slow analysis phase would let Vercel kill the function before our own catch fires.
+  opts: { deadlineMs?: number } = {},
+): Promise<ChannelResearch> {
   // Deliberately NOT wrapped in withRetry: this agent runs several web searches, and a
   // retry re-runs the whole conversation from scratch — the most expensive call in the app,
-  // charged twice. Its only caller (confirmGoal) already catches and offers the user a
-  // retry, so an internal retry just doubles cost for a rare malformed-output case.
+  // charged twice. Its callers already catch and surface a user-facing retry, so an internal
+  // retry just doubles cost for a rare malformed-output case.
   const client = anthropic();
   // One deadline across the whole pause/resume loop, not per request — the loop is what
   // runs long, and being killed by the platform mid-loop is the failure we're avoiding.
-  const signal = deadlineSignal();
+  const signal = deadlineSignal(opts.deadlineMs);
   let messages: Anthropic.MessageParam[] = [{ role: "user", content: buildPrompt(input) }];
 
   // Server-side web search can pause long turns; resume by echoing content back.

@@ -8,6 +8,9 @@ import { ArchivedCampaigns } from "./archived-campaigns";
 import Landing from "@/components/landing";
 
 export const dynamic = "force-dynamic";
+// The landing hosts the anonymous preview action (goal analysis + live channel research, ~60-90s);
+// without this Vercel kills the function at the default duration, same as every wizard page.
+export const maxDuration = 300;
 
 const stepLabel = {
   analysis: "Resume — review goal",

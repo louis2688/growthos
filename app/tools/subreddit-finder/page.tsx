@@ -8,6 +8,10 @@ export const metadata: Metadata = {
 };
 
 // Public marketing tool: allow-listed in lib/supabase/proxy.ts so it renders without login.
+// maxDuration: the finder's action runs the live web-search agent (~30-60s); without this Vercel
+// kills the function at the default duration — same convention as the wizard pages.
+export const maxDuration = 300;
+
 export default function SubredditFinderPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-12">

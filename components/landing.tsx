@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import LandingPreview from "@/components/landing-preview";
 
 // The public marketing homepage, shown by app/page.tsx to logged-out visitors (the proxy exempts
 // "/"). Built from docs/plans/copywriting.md, minus the parts the product's own honesty guardrails
@@ -83,7 +84,7 @@ const features = [
   {
     icon: ShieldCheck,
     title: "Adversarial evals keep you safe",
-    copy: "Before copy reaches you, an adversarial judge checks it: does it disclose you built the product, avoid fabricated stats and fake testimonials, lead with value? Community-safe by construction.",
+    copy: "Every copywriting prompt is battle-tested against an adversarial eval suite: does the output disclose you built the product, avoid fabricated stats and fake testimonials, lead with value? We re-run it whenever the prompts change.",
   },
   {
     icon: Wrench,
@@ -168,43 +169,8 @@ export default function Landing() {
             </ul>
           </div>
 
-          {/* Illustrative schematic — the structure, not a fake screenshot with invented metrics. */}
-          <div className="glass rounded-2xl border p-5 shadow-xl shadow-primary/10">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Your goal
-            </p>
-            <div className="mt-1.5 rounded-lg border bg-background/50 px-3 py-2 text-sm">
-              Get 500 signups for my Pomodoro app in 60 days
-            </div>
-            <div className="my-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
-              <span className="h-px flex-1 bg-border" /> becomes <span className="h-px flex-1 bg-border" />
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {["r/productivity", "Indie Hackers", "Product Hunt"].map((c) => (
-                <span key={c} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">
-                  {c}
-                </span>
-              ))}
-            </div>
-            <div className="mt-3 space-y-2">
-              {[
-                ["Study the subreddit rules & norms", true],
-                ["Draft a value-first deep-work post", false],
-                ["Build the UTM link for attribution", false],
-              ].map(([label, done]) => (
-                <div key={label as string} className="flex items-center gap-2.5 rounded-lg border p-2.5 text-sm">
-                  <span
-                    className={`grid size-4 flex-none place-items-center rounded border ${
-                      done ? "border-primary bg-primary text-white" : ""
-                    }`}
-                  >
-                    {done ? <Check className="size-3" aria-hidden /> : null}
-                  </span>
-                  <span className={done ? "text-muted-foreground line-through" : ""}>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* The interactive preview (roadmap #61): the real agents, rate-limited, no signup. */}
+          <LandingPreview />
         </div>
       </section>
 
