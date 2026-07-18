@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, currentUser } from "@/lib/supabase/server";
 import { stepPath } from "@/lib/wizard";
 import { wizardStep, type Campaign, type Channel, type Goal } from "@/lib/types";
 import { ArchivedCampaigns } from "./archived-campaigns";
+import Landing from "@/components/landing";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,10 @@ const stepLabel = {
 } as const;
 
 export default async function Home() {
+  // Logged-out visitors get the public marketing landing; the proxy exempts "/" so they reach it
+  // instead of being bounced to /login. Signed-in users fall through to their campaigns dashboard.
+  if (!(await currentUser())) return <Landing />;
+
   const db = await createClient();
   // throwOnError: a failed read must surface an error page, not an empty result that
   // renders "No campaigns yet" to someone who has ten.

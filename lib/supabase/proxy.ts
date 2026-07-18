@@ -31,7 +31,10 @@ export async function updateSession(request: NextRequest) {
   // sessions from being refreshed and logs users out at random.
   const { data } = await supabase.auth.getClaims();
 
-  const isPublic = PUBLIC_PATHS.some((p) => request.nextUrl.pathname.startsWith(p));
+  // "/" is public (it renders the marketing landing for logged-out visitors) — but as an EXACT
+  // match, never a prefix: "/".startsWith would be true for every route and open the whole app.
+  const path = request.nextUrl.pathname;
+  const isPublic = path === "/" || PUBLIC_PATHS.some((p) => path.startsWith(p));
   if (!data?.claims && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
