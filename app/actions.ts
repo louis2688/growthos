@@ -16,10 +16,31 @@ import { IMAGE_BUCKET, generateImage, imagePath } from "@/lib/agents/image-gener
 import { traced } from "@/lib/agents/trace";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient, currentUser } from "@/lib/supabase/server";
+import { consumeUserQuota } from "@/lib/rate-limit";
 import type { Channel, Goal, Priority, Tool, TodoStatus } from "@/lib/types";
 
 function isoDateInDays(days: number): string {
   return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+const QUOTA_MSG =
+  "You've hit today's AI usage limit (runs count even when they fail). It resets tomorrow — this cap is what keeps early access free for everyone.";
+
+/**
+ * Per-user daily cap in front of every agent-backed action: the second line of defense behind
+ * signup, so one scripted account can't hammer the paid search agents or drain the shared
+ * Cloudflare allocation. Returns an error string to show the user, or null to proceed.
+ * Fail-closed: a limiter outage must not turn authed accounts into blank checks.
+ * Pass userId when the caller already fetched the user — saves a duplicate auth round-trip.
+ */
+async function userQuotaError(kind: "agent" | "search", userId?: string): Promise<string | null> {
+  const id = userId ?? (await currentUser())?.id;
+  if (!id) return "Your session expired — please log in again.";
+  try {
+    return (await consumeUserQuota(id, kind)) ? null : QUOTA_MSG;
+  } catch {
+    return "AI actions are briefly unavailable — please try again shortly.";
+  }
 }
 
 /* ---------- Step 1: /new — analyze the goal ---------- */
@@ -43,6 +64,8 @@ export async function startCampaign(
   }
   const user = await currentUser();
   if (!user) redirect("/login");
+  const quotaErr = await userQuotaError("agent", user.id);
+  if (quotaErr) return { error: quotaErr, values };
 
   let campaignId: string;
   try {
@@ -121,6 +144,10 @@ export async function confirmGoal(
   }
   const { error: upErr } = await db.from("goals").update(edited).eq("campaign_id", campaignId);
   if (upErr) return { error: upErr.message };
+
+  // After the goal update on purpose: a quota-blocked user keeps their edits.
+  const quotaErr = await userQuotaError("search");
+  if (quotaErr) return { error: quotaErr };
 
   try {
     const research = await traced(db, { agent: "channel_research", campaign_id: campaignId }, () =>
@@ -315,6 +342,9 @@ export async function generatePlans(
   const selected = (channels as Channel[]).filter((c) => selectedIds.includes(c.id));
   if (selected.length !== selectedIds.length) return { error: "Unknown channel selected." };
 
+  const quotaErr = await userQuotaError("agent");
+  if (quotaErr) return { error: quotaErr };
+
   try {
     const result = await traced(db, { agent: "campaign_generator", campaign_id: campaignId }, () =>
       generateCampaignPlan({
@@ -390,6 +420,9 @@ export async function regenerateCampaign(
   if (!campaign || !goal) return { error: "Campaign not found." };
   const selected = (channels ?? []) as Channel[];
   if (selected.length === 0) return { error: "No selected channels to regenerate from." };
+
+  const quotaErr = await userQuotaError("agent");
+  if (quotaErr) return { error: quotaErr };
 
   try {
     // Generate BEFORE deleting: a failed generation leaves the campaign untouched.
@@ -524,6 +557,13 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
     .eq("id", plan.channel_id)
     .single();
   if (!channel) return { error: "Campaign data is incomplete." };
+
+  // launch_timing is the other paid Anthropic web-search path; everything else runs on the
+  // Cloudflare pool.
+  const quotaErr = await userQuotaError(
+    (tool as Tool).handler === "launch_timing" ? "search" : "agent",
+  );
+  if (quotaErr) return { error: quotaErr };
 
   try {
     const shared = {

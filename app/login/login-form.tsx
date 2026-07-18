@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { signIn, signInWithGoogle, type AuthState } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,17 @@ export default function LoginForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                {!signup && (
+                  <Link
+                    href="/login/forgot"
+                    className="text-xs text-muted-foreground hover:text-primary"
+                  >
+                    Forgot password?
+                  </Link>
+                )}
+              </div>
               <Input
                 id="password"
                 name="password"

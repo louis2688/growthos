@@ -18,8 +18,23 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  // The current production alias — swap when a custom domain lands. Without metadataBase, every
+  // relative OG/twitter image URL resolves against localhost/preview URLs and share cards break.
+  metadataBase: new URL("https://growthos-ivory.vercel.app"),
   title: "GrowthOS",
-  description: "AI-generated growth campaigns",
+  description:
+    "Type a goal. Get a growth campaign — channels found by live web search, prioritized todos, and community-safe copy.",
+  openGraph: {
+    title: "GrowthOS — type a goal, get a growth campaign",
+    description:
+      "AI turns “1,000 signups in 45 days” into researched channels, prioritized todos, and value-first copy that respects community rules.",
+    url: "/",
+    siteName: "GrowthOS",
+    type: "website",
+  },
+  // No twitter:image set on purpose — X and other scrapers fall back to the og:image from
+  // app/opengraph-image.tsx, which applies site-wide from this root segment.
+  twitter: { card: "summary_large_image" },
 };
 
 export default async function RootLayout({
