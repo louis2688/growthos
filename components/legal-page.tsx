@@ -34,8 +34,8 @@ export function LegalPage({
 
       <h1 className="font-heading text-3xl font-bold">{title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Effective {effectiveDate} · GrowthOS (operating name; a legal entity will be designated as
-        the service formalizes) · Contact:{" "}
+        Effective {effectiveDate} · GrowthOS by LaunchLift (operating name; a legal entity will be
+        designated as the service formalizes) · Contact:{" "}
         <a href="mailto:hello@launchlift.app" className="text-primary hover:underline">
           hello@launchlift.app
         </a>

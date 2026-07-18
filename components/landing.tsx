@@ -307,7 +307,7 @@ export default function Landing() {
               Log in
             </Link>
           </nav>
-          <p className="text-xs text-muted-foreground">© 2026 GrowthOS</p>
+          <p className="text-xs text-muted-foreground">© 2026 GrowthOS by LaunchLift</p>
         </div>
       </footer>
     </div>
