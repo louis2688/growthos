@@ -18,9 +18,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  // The current production alias — swap when a custom domain lands. Without metadataBase, every
-  // relative OG/twitter image URL resolves against localhost/preview URLs and share cards break.
-  metadataBase: new URL("https://growthos-ivory.vercel.app"),
+  // The production domain (Dave's, DNS on Cloudflare). Without metadataBase, every relative
+  // OG/twitter image URL resolves against localhost/preview URLs and share cards break.
+  metadataBase: new URL("https://launchlift.app"),
   title: "GrowthOS",
   description:
     "Type a goal. Get a growth campaign — channels found by live web search, prioritized todos, and community-safe copy.",
