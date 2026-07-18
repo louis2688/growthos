@@ -127,7 +127,8 @@ export default function AppShell({
     <div className="flex min-h-dvh w-full max-md:flex-col">
       {/* Desktop sidebar — collapsible */}
       <aside
-        className={`glass sticky top-0 flex h-dvh flex-col border-r p-3.5 transition-[width] duration-200 max-md:hidden ${
+        // pb-12: clears the fixed SiteFooter so the collapse button stays clickable.
+        className={`glass sticky top-0 flex h-dvh flex-col border-r p-3.5 pb-12 transition-[width] duration-200 max-md:hidden ${
           collapsed ? "w-[68px]" : "w-56"
         }`}
       >
@@ -151,18 +152,6 @@ export default function AppShell({
             {!collapsed && <span className="ml-1 text-xs">Collapse</span>}
           </Button>
         </div>
-        {!collapsed && (
-          <div className="mt-2 border-t px-3 pt-2 text-[10px] leading-relaxed text-muted-foreground/70">
-            <Link href="/privacy" className="hover:text-foreground">
-              Privacy
-            </Link>{" "}
-            ·{" "}
-            <Link href="/terms" className="hover:text-foreground">
-              Terms
-            </Link>
-            <br />© 2026 GrowthOS by LaunchLift
-          </div>
-        )}
       </aside>
 
       {/* Mobile top bar + drawer */}
@@ -192,16 +181,6 @@ export default function AppShell({
             <div className="mt-1">
               <ThemeToggle />
             </div>
-            <p className="mt-2 px-3 text-[10px] text-muted-foreground/70">
-              <Link href="/privacy" onClick={() => setMobileOpen(false)} className="hover:text-foreground">
-                Privacy
-              </Link>{" "}
-              ·{" "}
-              <Link href="/terms" onClick={() => setMobileOpen(false)} className="hover:text-foreground">
-                Terms
-              </Link>{" "}
-              · © 2026 GrowthOS by LaunchLift
-            </p>
           </div>
         )}
       </div>

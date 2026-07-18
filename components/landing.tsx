@@ -307,7 +307,7 @@ export default function Landing() {
               Log in
             </Link>
           </nav>
-          <p className="text-xs text-muted-foreground">© 2026 GrowthOS by LaunchLift</p>
+          {/* The © line lives in the global sticky SiteFooter — not duplicated here. */}
         </div>
       </footer>
     </div>
