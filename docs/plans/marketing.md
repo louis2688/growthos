@@ -165,11 +165,11 @@ This sample calendar is designed for the launch phase, focusing on organic devel
 ### Viral / Referral Opportunities (Viral Loops #93 & Two-Sided Referrals #137)
 * **"Share my Roadmap" loop:** Allow builders to generate a public link to their campaign dashboard (e.g., `growthos.to/share/dave-launch`). When they share their progress on Twitter/Reddit, others click the link, see the clean dashboard interface, and click "Build my own campaign."
 * **"Powered by GrowthOS" badges (#87):** When using the copywriting agent to post on directories or communities, append a subtle, optional footer note: *(Planned via GrowthOS)*. Clicking it redirects to our homepage with a referral token attached.
-* **Invite-to-Unlock Loop:** Grant users additional advanced agent credits (e.g., Mastra auto-publishing or timing recommenders) for every builder they refer who successfully creates and saves a campaign dashboard.
+* **Invite-to-Unlock Loop:** Grant users additional advanced agent credits (e.g., extra live-search updates or launch-timing recommendations) for every builder they refer who successfully creates and saves a campaign dashboard.
 
 ### Partnerships & Integrations
 * **Directory Partners:** Partner with directories (like StartupPedia, Microns, or Betalist) to offer one-click submission integration directly from the GrowthOS todo card.
-* **Integration Marketing (#63):** Co-market with integration tools listed in the tool catalog (e.g., Mastra, Supabase, Screenity). Write joint launch playbooks demonstrating how to build with their tools using GrowthOS campaign tasks.
+* **Integration Marketing (#63):** Co-market with integration tools listed in the tool catalog (e.g., Supabase, Screenity). Write joint launch playbooks demonstrating how to build with their tools using GrowthOS campaign tasks.
 * **Open Source as Marketing (#123) / Developer Relations (#136):** Open-source the core parsing rules, system schemas, or a Next.js campaign boilerplate to drive developer contributions and high-trust organic backlinks on GitHub.
 
 ---
@@ -233,5 +233,5 @@ Based on a low-to-medium bootstrap budget ($1,000/month initial spend, excluding
 * [ ] Release the open-source boilerplate wrapper on GitHub to drive developer relations (#123, #136).
 * [ ] Run "The Solo Builder's Launch Week Challenge" with 10 selected founders.
 * [ ] Launch officially on Product Hunt, Hacker News, and X.
-* [ ] Deploy the Mastra integration for automated social posting from todo cards.
+* [ ] Ship one-click directory submission from todo cards (prefilled hand-off; the user confirms and posts — no fabricated auto-submit or auto-publish).
 * [ ] Review Month 3 analytics, optimize conversion funnels, and prepare v3 subscription tiers.

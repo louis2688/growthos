@@ -17,13 +17,13 @@ grid-layout
 
 ### 1. Key Partners
 * **AI Infrastructure Providers:**
-  * **Anthropic:** Primary partner for LLM processing, leveraging the `claude-opus-4-8` model for complex reasoning and campaign planning.
-  * **Secondary LLM Providers:** Backup providers (e.g., OpenAI) to guarantee uptime and rate limit resilience.
+  * **Anthropic:** LLM partner for the two agents that need live web search (Channel Research, Launch Timing) — `claude-haiku-4-5` with the built-in `web_search` tool.
+  * **Cloudflare Workers AI:** Free-tier LLM (`llama-3.3-70b`) running the other eight agents at $0, plus FLUX.1 schnell image generation. (OpenAI was evaluated and rejected on a billing wall.)
 * **Hosting & Cloud Infrastructure:**
   * **Vercel:** Edge hosting, serverless execution environments, and preview branch infrastructure.
   * **Supabase:** Managed Postgres database, User Authentication, Real-time APIs, and Storage.
 * **Search and Indexing Services:**
-  * **Web Search APIs:** Partners (e.g., Tavily, Bing API) enabling real-time community discovery, bypassing training data cutoffs.
+  * **Web Search:** Claude's built-in `web_search` tool (run via Haiku), enabling real-time community discovery and bypassing training-data cutoffs — no separate search-API vendor. (Bing's API was retired in 2025; Tavily/Brave/Serper were evaluated and not adopted.)
 * **Integrations & Toolbox Partners:**
   * **Social Media Platforms:** Reddit, Twitter/X, LinkedIn, Product Hunt, and YouTube APIs for automated campaigns and execution.
   * **Marketing SaaS Partners:** Integration hooks for email services (Resend, Mailchimp), CRMs (HubSpot), analytics platforms, and design tools.
@@ -110,9 +110,9 @@ grid-layout
 
 ### 8. Cost Structure
 * **AI API Expenses (Variable):**
-  * LLM token utilization (Anthropic Claude API) across 4 agent stages per campaign (Goal, Channel, Generator, Tooling). Roughly $1.00 - $2.00 per full campaign generation.
+  * LLM tokens: eight of the ten agents run on Cloudflare Workers AI's free tier ($0); only Channel Research and Launch Timing (Anthropic Haiku, incl. web search) carry a per-token/per-search cost. A full campaign generation now runs well under $0.50, most of it those two search agents.
 * **Infrastructure & Hosting (Semi-variable):**
-  * Database read/write costs (Supabase Postgres), Edge compute limits (Vercel), and Web search API billing (e.g., Tavily search credits).
+  * Database read/write costs (Supabase Postgres), Edge compute limits (Vercel), and Anthropic web-search billing (per request, only on the two Haiku search agents).
 * **Customer Acquisition Cost (CAC - Low):**
   * Primarily sweat equity via community marketing and Build-in-Public loops. Paid acquisition is minimal, focusing instead on organic developer-focused sponsorships.
 * **Engineering & Development (Fixed):**
@@ -134,7 +134,7 @@ GrowthOS uses a **hybrid subscription + usage-based pricing model** designed to 
 | **Active Campaigns** | 1 campaign | Up to 5 campaigns | Up to 25 campaigns | 0 active (Read-only access) |
 | **Channels per Plan**| Max 3 | Unlimited | Unlimited | N/A |
 | **AI Credits / Month**| 10 credits (one-off) | 150 credits / month | 600 credits / month | 5 credits / month |
-| **Live Web Search**  | ❌ (Static templates) |  (Tavily/Bing integration) |  (With deep site scraping) | ❌ (Static only) |
+| **Live Web Search**  | ❌ (Static templates) | ✅ (Claude web search via Haiku) | ✅ (deeper / more queries) | ❌ (Static only) |
 | **AI Copywriter**    | Basic drafting |  + Compliance Audit |  + Custom Brand Voice | Read-only |
 | **Team Seats**       | 1 user | 1 user | 3 seats included (+$15/seat) | 1 user |
 | **Integrations**     | Manual export | Trello, Notion, Buffer | Advanced CRM, custom Webhooks| Read-only |
@@ -187,7 +187,7 @@ Let's model the unit economics of a typical **Pro Builder ($29/mo)** customer un
 
 | Assumption / Risk | Impact | Probability | Mitigation Strategy |
 |:---|:---:|:---:|:---|
-| **1. High AI Latency & Cost**<br>Running 4 sequential agent steps (Goal, Search, Campaign, Tools) takes too long or costs too many LLM tokens. | High | Medium | Implement caching for identical search queries; run agent steps asynchronously; offer real-time progress bars; switch to Claude-3-5-Haiku for less complex pipeline stages. |
+| **1. High AI Latency & Cost**<br>Running 4 sequential agent steps (Goal, Search, Campaign, Tools) takes too long or costs too many LLM tokens. | High | Medium | Largely implemented: eight agents moved to Cloudflare Workers AI's free tier and the two search agents to Haiku 4.5, cutting per-campaign cost to near zero; plus query caching, async agent steps, and real-time progress bars. |
 | **2. Banned Content & Safety**<br>AI-generated copy triggers spam filters or community moderators, leading to banned accounts and brand damage. | Critical | High | Implement rigorous adversarial safety checks; enforce rules-compliant, value-first content; add mandatory creator disclosure markers; warn users clearly about community guidelines. |
 | **3. Web Search Volatility**<br>Live web searches yield noisy or irrelevant communities, degrading channel recommendation quality. | Medium | Medium | Validate search payloads using a post-processing parsing filter; fallback gracefully to platform-level static lists; allow manual channel overrides. |
 | **4. High Solopreneur Churn**<br>Indie hackers cancel subscriptions quickly after launching their products or if their products fail. | High | High | Offer quarterly/annual discounts; introduce a "Hibernate/Archive" tier ($5/mo) to keep campaign data; expand to secondary SaaS teams who run continuous experiments. |

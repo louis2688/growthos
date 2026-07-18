@@ -148,16 +148,19 @@ I've documented the architecture details below if you want to inspect it first.
 
 ## 7. Social Proof & Case Studies
 
+> [!WARNING]
+> **Do not ship invented testimonials or numbers.** GrowthOS's own guardrails block users from fabricating signup counts and quotes — the landing page must hold the same line, or the product contradicts itself. The earlier draft here invented "Dave — 120 signups" and "Sarah, Product Marketer — 10x"; both are removed. Fill the slots below with REAL, consented quotes and verifiable outcomes once early users provide them. Until then, lead with build-in-public proof the product can actually show today.
+
 * **Section Headline:**
-  ## Proven by indie builders.
+  ## Built in public. Proof, not promises.
 
-* **Case Study 1: The Solopreneur Launch**
-  > "I spent 3 months coding my Next.js boilerplate and had no idea how to market it. Using GrowthOS, I got a structured list of 12 subreddits and 4 directories, along with compliant draft copy. I checked off my tasks over 5 days and got my first 120 signups without spending a dime on ads."
-  > **— Dave, Solopreneur & Creator of GrowthOS**
+* **What we can show today (real):**
+  * The adversarial eval suite that blocks fabricated stats, undisclosed self-promotion, and "we'll publish for you" claims — a screenshot of the 7/7 guardrail run.
+  * A live before/after: a spammy generic-AI Reddit post vs. the value-first, disclosure-first draft GrowthOS writes.
 
-* **Case Study 2: The Seed SaaS Team**
-  > "As a small team, running marketing experiments took too much time. GrowthOS allowed us to draft, audit, and structure three campaigns in under an hour. We accelerated our experiment velocity by 10x."
-  > **— Sarah, Product Marketer**
+* **Testimonial slots (real, consented quotes only — no invented numbers):**
+  * `[Real early-user quote + name + a verifiable outcome they reported.]`
+  * `[Real design-partner quote + name.]`
 
 ---
 
@@ -187,7 +190,7 @@ I've documented the architecture details below if you want to inspect it first.
     * Unlimited Live Web Searches (Subreddits, Discord, Directories)
     * Advanced Copywriting Agent with Adversarial Compliance Audits
     * Full Catalog of Integrated Marketing Tools (UTM, Prompts, Planners)
-    * Mastra Social Publishing integration (Direct post scheduler)
+    * Launch Timing recommendations (best posting windows — you post it yourself; GrowthOS never auto-publishes)
     * Priority Support
   * **CTA Button:** `Unlock Growth Engine (3-Day Free Trial)`
 
