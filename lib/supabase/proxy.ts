@@ -1,7 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth"];
+// "/tools/" keeps the trailing slash on purpose: startsWith("/tools") would also match the
+// authed "/toolbox" catalog and un-gate it. Public free tools live under /tools/<name>.
+const PUBLIC_PATHS = ["/login", "/auth", "/tools/"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
