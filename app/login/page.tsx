@@ -7,9 +7,16 @@ export default function LoginPage() {
       <div className="glass grid w-full max-w-4xl overflow-hidden rounded-2xl border shadow-xl shadow-primary/10 md:grid-cols-[1.05fr_1fr]">
         {/* Brand panel — the pitch, per design-system/ui-mockups.html */}
         <div className="hidden flex-col justify-between bg-gradient-to-br from-primary via-brand-indigo to-brand-pink p-10 text-white md:flex">
-          <span className="flex items-center gap-2.5 font-heading text-lg font-bold">
-            <BrandMark />
-            GrowthOS
+          {/* Manual lockup: the shared one uses theme muted-foreground, unreadable on this
+              gradient — the house line needs white here. */}
+          <span className="flex items-center gap-2.5">
+            <BrandMark className="size-9" />
+            <span className="flex flex-col justify-center">
+              <span className="font-heading text-lg font-bold leading-tight">GrowthOS</span>
+              <span className="text-[10px] font-medium leading-none tracking-wide text-white/70">
+                by LaunchLift
+              </span>
+            </span>
           </span>
 
           <div className="py-10">

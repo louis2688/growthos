@@ -46,7 +46,12 @@ export default async function Image() {
             {/* eslint-disable-next-line @next/next/no-img-element -- satori requires plain img */}
             <img src={markSrc} alt="" width={44} height={44} />
           </div>
-          <div style={{ display: "flex", fontSize: 44, fontWeight: 700 }}>GrowthOS</div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", fontSize: 44, fontWeight: 700 }}>GrowthOS</div>
+            <div style={{ display: "flex", fontSize: 20, color: "rgba(255,255,255,0.6)" }}>
+              by LaunchLift
+            </div>
+          </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>

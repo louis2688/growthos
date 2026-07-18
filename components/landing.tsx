@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import LandingPreview from "@/components/landing-preview";
-import { BrandMark } from "@/components/brand-mark";
+import { BrandLockup, BrandMark } from "@/components/brand-mark";
 
 // The public marketing homepage, shown by app/page.tsx to logged-out visitors (the proxy exempts
 // "/"). Built from docs/plans/copywriting.md, minus the parts the product's own honesty guardrails
@@ -79,9 +79,8 @@ export default function Landing() {
       {/* Header */}
       <header className="glass sticky top-0 z-40 border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2.5 font-heading text-lg font-bold">
-            <BrandMark />
-            GrowthOS
+          <Link href="/" className="flex items-center">
+            <BrandLockup />
           </Link>
           <nav className="flex items-center gap-1.5">
             <a

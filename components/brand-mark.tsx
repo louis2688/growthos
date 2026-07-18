@@ -15,3 +15,21 @@ export function BrandMark({ className = "size-8" }: { className?: string }) {
     </span>
   );
 }
+
+/**
+ * Full brand lockup: mark + product name + the house line. "by LaunchLift" is HTML rather than
+ * baked into the raster — crisp at every size, and it follows the theme.
+ */
+export function BrandLockup() {
+  return (
+    <span className="flex items-center gap-2.5">
+      <BrandMark className="size-9" />
+      <span className="flex flex-col justify-center">
+        <span className="font-heading text-lg font-bold leading-tight">GrowthOS</span>
+        <span className="text-[10px] font-medium leading-none tracking-wide text-muted-foreground">
+          by LaunchLift
+        </span>
+      </span>
+    </span>
+  );
+}

@@ -7,7 +7,7 @@ import { BarChart3, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Rocket, Setting
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BrandMark } from "@/components/brand-mark";
+import { BrandLockup, BrandMark } from "@/components/brand-mark";
 import { signOut } from "@/app/login/actions";
 
 // "Activity", not "Analytics": this shows what the AI did on your behalf. Analytics would
@@ -132,10 +132,9 @@ export default function AppShell({
           collapsed ? "w-[68px]" : "w-56"
         }`}
       >
-        <div className={`flex items-center pb-5 ${collapsed ? "justify-center" : "gap-2.5 px-1"}`}>
-          <Link href="/" className="flex items-center gap-2.5 font-heading text-lg font-bold">
-            <BrandMark />
-            {!collapsed && <span>GrowthOS</span>}
+        <div className={`flex items-center pb-5 ${collapsed ? "justify-center" : "px-1"}`}>
+          <Link href="/" className="flex items-center">
+            {collapsed ? <BrandMark /> : <BrandLockup />}
           </Link>
         </div>
         <Nav showLabels={!collapsed} user={user} />
@@ -157,13 +156,8 @@ export default function AppShell({
       {/* Mobile top bar + drawer */}
       <div className="glass sticky top-0 z-40 border-b md:hidden">
         <div className="flex items-center justify-between px-4 py-2.5">
-          <Link
-            href="/"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-2.5 font-heading text-lg font-bold"
-          >
-            <BrandMark />
-            GrowthOS
+          <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center">
+            <BrandLockup />
           </Link>
           <Button
             variant="ghost"
