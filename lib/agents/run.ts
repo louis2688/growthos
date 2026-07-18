@@ -3,6 +3,14 @@ import Anthropic from "@anthropic-ai/sdk";
 
 export const MODEL = "claude-opus-4-8";
 
+/**
+ * Cheaper Claude tier for the two agents that need web search but not frontier reasoning
+ * (channel research, launch timing). Verified live to support web_search + structured output
+ * together. Note: Haiku does NOT support adaptive thinking or the effort param (both 400), and
+ * gets the older web_search_20250305 tool variant — callers must account for both.
+ */
+export const HAIKU = "claude-haiku-4-5";
+
 // Lazy so importing an agent module (e.g. in tests) never requires the API key.
 export function anthropic() {
   return new Anthropic();

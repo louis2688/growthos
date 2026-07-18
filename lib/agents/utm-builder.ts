@@ -1,6 +1,6 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, recordUsage, withRetry } from "./run";
+import { withRetry } from "./run";
+import { generateStructured } from "./cloudflare";
 
 /**
  * UTM values must be lowercase and URL-safe, or analytics tools split one link across buckets.
@@ -78,18 +78,9 @@ Rules:
 }
 
 export async function buildUtm(input: UtmBuilderInput): Promise<UtmPlan> {
-  return withRetry(async () => {
-    const response = await anthropic().messages.parse({
-      model: MODEL,
-      max_tokens: 2000,
-      thinking: { type: "adaptive" },
-      output_config: { format: zodOutputFormat(UtmPlanSchema) },
-      messages: [{ role: "user", content: buildPrompt(input) }],
-    });
-    recordUsage(response.usage);
-    if (!response.parsed_output) throw new Error("Model returned no parsable UTM plan");
-    return response.parsed_output;
-  });
+  // Cloudflare Workers AI (free). generateStructured re-validates against UtmPlanSchema — so a
+  // value that breaks the lowercase/URL-safe rule throws and withRetry re-runs — and records usage.
+  return withRetry(() => generateStructured(buildPrompt(input), UtmPlanSchema));
 }
 
 /**

@@ -1,6 +1,6 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, recordUsage, withRetry } from "./run";
+import { withRetry } from "./run";
+import { generateStructured } from "./cloudflare";
 
 export const SeoRewriteSchema = z.object({
   keywords: z
@@ -52,18 +52,11 @@ Rules:
 }
 
 export async function optimizeForSeo(input: SeoOptimizerInput): Promise<SeoRewrite> {
+  // Cloudflare Workers AI (free). generateStructured re-validates + records usage.
   return withRetry(async () => {
-    const response = await anthropic().messages.parse({
-      model: MODEL,
-      max_tokens: 4000,
-      thinking: { type: "adaptive" },
-      output_config: { format: zodOutputFormat(SeoRewriteSchema) },
-      messages: [{ role: "user", content: buildPrompt(input) }],
-    });
-    recordUsage(response.usage);
-    if (!response.parsed_output) throw new Error("Model returned no parsable SEO rewrite");
-    if (!response.parsed_output.body.trim()) throw new Error("Model returned an empty body");
-    return response.parsed_output;
+    const rewrite = await generateStructured(buildPrompt(input), SeoRewriteSchema);
+    if (!rewrite.body.trim()) throw new Error("Model returned an empty body");
+    return rewrite;
   });
 }
 

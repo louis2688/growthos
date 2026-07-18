@@ -1,7 +1,26 @@
-import { newUsage, withUsage } from "./run";
+import { HAIKU, newUsage, withUsage } from "./run";
+import { CLOUDFLARE_TEXT_MODEL } from "./cloudflare";
 import type { createClient } from "@/lib/supabase/server";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * Which model each traced agent runs on — the single source of truth, so a run records the
+ * model it actually used and the Activity page prices it right (Haiku ≠ Opus, Cloudflare = $0).
+ * An agent missing here records a null model, which pricing treats as Opus (the pre-split
+ * default). Keep this in step with the model each agent's code actually calls.
+ */
+const MODEL_BY_AGENT: Record<string, string> = {
+  channel_research: HAIKU,
+  launch_timing: HAIKU,
+  campaign_generator: CLOUDFLARE_TEXT_MODEL,
+  tool_recommender: CLOUDFLARE_TEXT_MODEL,
+  post_writer: CLOUDFLARE_TEXT_MODEL,
+  seo_optimizer: CLOUDFLARE_TEXT_MODEL,
+  email_digest: CLOUDFLARE_TEXT_MODEL,
+  utm_builder: CLOUDFLARE_TEXT_MODEL,
+  image_generator: CLOUDFLARE_TEXT_MODEL, // the prompt writer runs on Cloudflare; FLUX render is free
+};
 
 export type TraceContext = {
   agent: string;
@@ -38,6 +57,7 @@ export async function traced<T>(db: Db, ctx: TraceContext, fn: () => Promise<T>)
         todo_id: ctx.todo_id ?? null,
         agent: ctx.agent,
         status: "running",
+        model: MODEL_BY_AGENT[ctx.agent] ?? null,
       })
       .select("id")
       .single();

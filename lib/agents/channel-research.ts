@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, deadlineSignal, recordUsage } from "./run";
+import { HAIKU, anthropic, deadlineSignal, recordUsage } from "./run";
 import type { GoalAnalysis } from "./goal-analyzer";
 
 export const ChannelResearchSchema = z.object({
@@ -49,7 +49,8 @@ knowledge but mark those confidence "low".`;
 
 // 6 searches put a real run at 252s against Vercel's 300s ceiling. 4 still comfortably
 // covers "find and verify 6-10 channels" and buys back headroom.
-const tools = [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 4 }];
+// web_search_20250305, not _20260209: Haiku only supports the older tool variant (verified).
+const tools = [{ type: "web_search_20250305" as const, name: "web_search" as const, max_uses: 4 }];
 
 export async function researchChannels(input: ChannelResearchInput): Promise<ChannelResearch> {
   // Deliberately NOT wrapped in withRetry: this agent runs several web searches, and a
@@ -66,9 +67,10 @@ export async function researchChannels(input: ChannelResearchInput): Promise<Cha
   for (let attempt = 0; attempt < 5; attempt++) {
     const response = await client.messages.parse(
       {
-        model: MODEL,
+        // Haiku: no adaptive thinking / effort (both 400). Runs without thinking, over
+        // searched facts — the reasoning that matters here is verifying channels via search.
+        model: HAIKU,
         max_tokens: 8192,
-        thinking: { type: "adaptive" },
         tools,
         output_config: { format: zodOutputFormat(ChannelResearchSchema) },
         messages,

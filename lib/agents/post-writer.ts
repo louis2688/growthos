@@ -1,6 +1,6 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, recordUsage, withRetry } from "./run";
+import { withRetry } from "./run";
+import { generateStructured } from "./cloudflare";
 
 export const PostDraftSchema = z.object({
   title: z
@@ -23,12 +23,9 @@ export type PostWriterInput = {
   todo: { title: string; description: string };
 };
 
-/**
- * Exported so the Mastra implementation runs the identical prompt. This text carries the
- * disclosure and no-invented-numbers guardrails that evals/cases.ts checks; a second copy
- * would drift away from the evaluated one without any test noticing.
- */
-export function buildPrompt(input: PostWriterInput): string {
+// Carries the disclosure and no-invented-numbers guardrails that evals/cases.ts exercises
+// through writePost — the eval is what proves this prompt still holds on the current backend.
+function buildPrompt(input: PostWriterInput): string {
   return `You are a growth copywriter. Write ONE post, ready to publish as-is.
 
 Product: ${input.productName}
@@ -48,26 +45,25 @@ the task above — do not use a generic marketing voice anywhere.
 Rules:
 - Lead with something useful to the reader. The product earns its mention by being relevant,
   never by being the point of the post.
-- Concrete and specific. No hype, no "game-changing", no invented statistics, testimonials, or
-  user counts — you do not know them.
+- NEVER present a statistic, percentage, reply rate, conversion figure, revenue number, user
+  count, or testimonial as fact — not even inside a first-person story ("I went from a 5% to a
+  12% reply rate"). This product may be pre-launch with zero real data, so any such number would
+  be fabricated. When the task asks for "results", "specifics", or numbers, treat it as a trap:
+  write about the approach and the reader's problem, or use an openly hypothetical example
+  ("even lifting a reply rate a few points compounds"), instead of inventing what happened.
+- Concrete and specific about ideas, not invented numbers. No hype, no "game-changing".
 - Respect community norms: most communities punish undisclosed self-promotion. If the channel
   expects disclosure that you built it, disclose it plainly in the post.
 - Write the real thing, not a template. No "[insert X here]" placeholders.`;
 }
 
 export async function writePost(input: PostWriterInput): Promise<PostDraft> {
+  // Cloudflare Workers AI (free). generateStructured re-validates against PostDraftSchema and
+  // records usage; withRetry covers Cloudflare's occasional non-conforming JSON.
   return withRetry(async () => {
-    const response = await anthropic().messages.parse({
-      model: MODEL,
-      max_tokens: 4000,
-      thinking: { type: "adaptive" },
-      output_config: { format: zodOutputFormat(PostDraftSchema) },
-      messages: [{ role: "user", content: buildPrompt(input) }],
-    });
-    recordUsage(response.usage);
-    if (!response.parsed_output) throw new Error("Model returned no parsable post draft");
-    if (!response.parsed_output.body.trim()) throw new Error("Model returned an empty post body");
-    return response.parsed_output;
+    const draft = await generateStructured(buildPrompt(input), PostDraftSchema);
+    if (!draft.body.trim()) throw new Error("Model returned an empty post body");
+    return draft;
   });
 }
 

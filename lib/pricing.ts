@@ -10,17 +10,36 @@
 
 import type { AgentRun } from "./types";
 
-/** Anthropic's published rates for MODEL (claude-opus-4-8), USD per million tokens. */
-const INPUT_USD_PER_MTOK = 5;
-const OUTPUT_USD_PER_MTOK = 25;
+/** Published USD-per-million-token rates, by model string as stored on agent_runs.model. */
+const RATES: Record<string, { input: number; output: number }> = {
+  "claude-opus-4-8": { input: 5, output: 25 },
+  "claude-haiku-4-5": { input: 1, output: 5 },
+};
 
 /**
- * Model tokens only. Web searches are billed per request and we have no verified per-search
- * rate, so they are counted and shown separately rather than folded in at a guessed price —
- * a made-up number here would understate real spend while looking authoritative.
+ * Rate for a run's model. A null model is a pre-split row (all Opus back then), so it prices
+ * as Opus. Any Cloudflare Workers AI model (@cf/…) is free tier — $0. An unrecognised Claude
+ * model falls back to Opus rather than silently $0, so a new paid model can't read as free.
  */
-export function estimateCostUsd(inputTokens: number, outputTokens: number): number {
-  return (inputTokens / 1e6) * INPUT_USD_PER_MTOK + (outputTokens / 1e6) * OUTPUT_USD_PER_MTOK;
+function rateFor(model: string | null | undefined): { input: number; output: number } {
+  if (model && RATES[model]) return RATES[model];
+  if (model && model.startsWith("@cf/")) return { input: 0, output: 0 };
+  return RATES["claude-opus-4-8"];
+}
+
+/**
+ * Model tokens only, priced at the run's own model rate. Web searches are billed per request
+ * and we have no verified per-search rate, so they are counted and shown separately rather
+ * than folded in at a guessed price — a made-up number would understate spend while looking
+ * authoritative. `model` defaults to Opus so a bare two-arg call still prices at Opus rates.
+ */
+export function estimateCostUsd(
+  inputTokens: number,
+  outputTokens: number,
+  model: string | null = "claude-opus-4-8",
+): number {
+  const rate = rateFor(model);
+  return (inputTokens / 1e6) * rate.input + (outputTokens / 1e6) * rate.output;
 }
 
 /** Sub-cent costs are real money at this volume; don't round them away to "$0.00". */
@@ -48,14 +67,16 @@ export function measured(runs: AgentRun[]): AgentRun[] {
 
 export type Spend = { cost: number; tokens: number; searches: number };
 
-/** Spend across every run given, failures included — a run that died still burned tokens. */
+/**
+ * Spend across every run given, failures included — a run that died still burned tokens.
+ * Priced PER RUN by that run's own model: a mixed set (Haiku + Cloudflare + historical Opus)
+ * summed and priced once at a single rate would be wrong, so each run is costed on its own.
+ */
 export function spendOf(runs: AgentRun[]): Spend {
   const m = measured(runs);
-  const input = m.reduce((s, r) => s + (r.input_tokens ?? 0), 0);
-  const output = m.reduce((s, r) => s + (r.output_tokens ?? 0), 0);
   return {
-    cost: estimateCostUsd(input, output),
-    tokens: input + output,
+    cost: m.reduce((s, r) => s + estimateCostUsd(r.input_tokens ?? 0, r.output_tokens ?? 0, r.model), 0),
+    tokens: m.reduce((s, r) => s + (r.input_tokens ?? 0) + (r.output_tokens ?? 0), 0),
     searches: m.reduce((s, r) => s + (r.web_search_requests ?? 0), 0),
   };
 }

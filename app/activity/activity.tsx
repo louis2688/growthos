@@ -176,8 +176,10 @@ export default function Activity({
               </table>
             </div>
             <p className="border-t px-4 py-3 text-xs text-muted-foreground">
-              Cost is an estimate: token counts priced at Claude Opus 4.8&apos;s current published
-              rates ($5 per million in, $25 per million out).{" "}
+              Cost is an estimate, priced per run by the model that produced it: most agents run on
+              Cloudflare Workers AI&apos;s free tier ($0), Channel Research and Launch Timing on
+              Claude Haiku 4.5 ($1 / $5 per million in/out), and runs from before the split at
+              Claude Opus 4.8&apos;s rates ($5 / $25).{" "}
               {total.searches > 0 && (
                 <>
                   It excludes the {total.searches} web search

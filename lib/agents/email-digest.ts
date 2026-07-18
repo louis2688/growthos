@@ -1,6 +1,6 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, recordUsage, withRetry } from "./run";
+import { withRetry } from "./run";
+import { generateStructured } from "./cloudflare";
 
 export const EmailDigestSchema = z.object({
   subject: z.string().describe("Subject line — specific, not a teaser"),
@@ -59,18 +59,11 @@ Rules:
 }
 
 export async function composeEmailDigest(input: EmailDigestInput): Promise<EmailDigest> {
+  // Cloudflare Workers AI (free). generateStructured re-validates + records usage.
   return withRetry(async () => {
-    const response = await anthropic().messages.parse({
-      model: MODEL,
-      max_tokens: 4000,
-      thinking: { type: "adaptive" },
-      output_config: { format: zodOutputFormat(EmailDigestSchema) },
-      messages: [{ role: "user", content: buildPrompt(input) }],
-    });
-    recordUsage(response.usage);
-    if (!response.parsed_output) throw new Error("Model returned no parsable email digest");
-    if (!response.parsed_output.body.trim()) throw new Error("Model returned an empty email body");
-    return response.parsed_output;
+    const digest = await generateStructured(buildPrompt(input), EmailDigestSchema);
+    if (!digest.body.trim()) throw new Error("Model returned an empty email body");
+    return digest;
   });
 }
 

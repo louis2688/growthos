@@ -37,6 +37,9 @@ export type AgentRun = {
   input_tokens: number | null;
   output_tokens: number | null;
   web_search_requests: number | null;
+  // Which model actually ran (migration 0013). Null on runs traced before it — those all
+  // predate the model split, so they were Opus; pricing treats null as Opus.
+  model: string | null;
 };
 
 /**

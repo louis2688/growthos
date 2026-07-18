@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, deadlineSignal, oneLine, recordUsage } from "./run";
+import { HAIKU, anthropic, deadlineSignal, oneLine, recordUsage } from "./run";
 
 export const LaunchTimingSchema = z.object({
   window: z
@@ -57,7 +57,10 @@ Rules:
 - The checklist is what to have ready beforehand and what to do in the first hour after posting.`;
 }
 
-const tools = [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: 4 }];
+// web_search_20250305, not the _20260209 variant: Haiku only supports the older tool version
+// (verified — the newer one is Opus/Sonnet-tier). Still a full search; it just lacks the
+// dynamic-filtering step the newer variant adds.
+const tools = [{ type: "web_search_20250305" as const, name: "web_search" as const, max_uses: 4 }];
 
 export async function recommendTiming(input: LaunchTimingInput): Promise<LaunchTiming> {
   // Not wrapped in withRetry: same reasoning as researchChannels — a retry re-runs every
@@ -69,9 +72,10 @@ export async function recommendTiming(input: LaunchTimingInput): Promise<LaunchT
   for (let attempt = 0; attempt < 5; attempt++) {
     const response = await client.messages.parse(
       {
-        model: MODEL,
+        // Haiku: no adaptive thinking, no effort param (both 400 on this model). It runs
+        // without thinking — fine for a timing recommendation over searched facts.
+        model: HAIKU,
         max_tokens: 4000,
-        thinking: { type: "adaptive" },
         tools,
         output_config: { format: zodOutputFormat(LaunchTimingSchema) },
         messages,

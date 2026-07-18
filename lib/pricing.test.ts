@@ -17,6 +17,7 @@ function run(over: Partial<AgentRun>): AgentRun {
     input_tokens: 1000,
     output_tokens: 1000,
     web_search_requests: 0,
+    model: "claude-opus-4-8",
     ...over,
   };
 }
@@ -27,6 +28,22 @@ describe("estimateCostUsd", () => {
     expect(estimateCostUsd(1_000_000, 1_000_000)).toBeCloseTo(30, 6);
     expect(estimateCostUsd(1_000_000, 0)).toBeCloseTo(5, 6);
     expect(estimateCostUsd(0, 1_000_000)).toBeCloseTo(25, 6);
+  });
+
+  it("prices per model — Haiku at its own rate, not Opus's", () => {
+    // Haiku is $1/$5, a fifth of Opus. Pricing a Haiku run at Opus rates would 5x the bill.
+    expect(estimateCostUsd(1_000_000, 1_000_000, "claude-haiku-4-5")).toBeCloseTo(6, 6);
+  });
+
+  it("prices any Cloudflare Workers AI model at $0 (free tier)", () => {
+    expect(estimateCostUsd(1_000_000, 1_000_000, "@cf/meta/llama-3.3-70b-instruct-fp8-fast")).toBe(0);
+  });
+
+  it("treats a null model (pre-split row) as Opus, and an unknown Claude model as Opus too", () => {
+    // Null must not read as free — those historical rows genuinely ran on Opus.
+    expect(estimateCostUsd(1_000_000, 0, null)).toBeCloseTo(5, 6);
+    // A future paid Claude model we haven't mapped must not silently price as $0.
+    expect(estimateCostUsd(1_000_000, 0, "claude-something-new")).toBeCloseTo(5, 6);
   });
 
   it("is zero for a run that spent nothing", () => {
@@ -83,6 +100,18 @@ describe("spendOf", () => {
       run({ status: "failed", error: "timeout", input_tokens: 1_000_000, output_tokens: 0 }),
     ];
     expect(spendOf(runs).cost).toBeCloseTo(5, 6);
+  });
+
+  it("prices a mixed-model set per run, not summed-then-priced-once", () => {
+    // Opus (1M/0 = $5) + Haiku (1M/0 = $1) + Cloudflare (free = $0) = $6. Summing the tokens
+    // first (2M in) and pricing at one rate would give the wrong number for every model.
+    const runs = [
+      run({ model: "claude-opus-4-8", input_tokens: 1_000_000, output_tokens: 0 }),
+      run({ id: "r2", model: "claude-haiku-4-5", input_tokens: 1_000_000, output_tokens: 0 }),
+      run({ id: "r3", model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", input_tokens: 1_000_000, output_tokens: 0 }),
+    ];
+    expect(spendOf(runs).cost).toBeCloseTo(6, 6);
+    expect(spendOf(runs).tokens).toBe(3_000_000);
   });
 
   it("counts web searches separately and keeps them out of the cost", () => {

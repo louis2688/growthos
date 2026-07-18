@@ -7,7 +7,6 @@ import { researchChannels } from "@/lib/agents/channel-research";
 import { generateCampaignPlan } from "@/lib/agents/campaign-generator";
 import { recommendTools } from "@/lib/agents/tool-recommender";
 import { formatDraft, writePost } from "@/lib/agents/post-writer";
-import { writePostViaMastra } from "@/lib/agents/post-writer-mastra";
 import { formatSeoRewrite, optimizeForSeo } from "@/lib/agents/seo-optimizer";
 import { composeEmailDigest, formatEmailDigest } from "@/lib/agents/email-digest";
 import { buildUtm, campaignSlug, formatUtm } from "@/lib/agents/utm-builder";
@@ -543,17 +542,7 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
       async () => {
         switch ((tool as Tool).handler) {
           case "post_writer":
-            // SPIKE: MASTRA_POST_WRITER=1 routes this one agent through Mastra, so the
-            // serverless path gets proven on real Vercel infra before any wider adoption.
-            // The import is unconditional on purpose — it forces @mastra/core into the
-            // bundle, which is the half of the question a local build can't answer. Both
-            // paths run the same prompt and schema, so a trace comparison is apples to
-            // apples. Remove this branch once we've decided either way.
-            return formatDraft(
-              process.env.MASTRA_POST_WRITER === "1"
-                ? await writePostViaMastra({ ...shared, channel })
-                : await writePost({ ...shared, channel }),
-            );
+            return formatDraft(await writePost({ ...shared, channel }));
 
           case "seo_optimizer":
             return formatSeoRewrite(await optimizeForSeo({ ...shared, channel }));

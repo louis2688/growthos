@@ -18,7 +18,9 @@ if (cases.length === 0) {
   process.exit(1);
 }
 
-console.log(`Running ${cases.length} guardrail eval${cases.length === 1 ? "" : "s"} against ${"claude-opus-4-8"}\n`);
+// Agents run on their own backends now (Cloudflare Workers AI + Haiku for the search agents);
+// the judge stays on Opus so the strongest model audits the cheaper ones' output.
+console.log(`Running ${cases.length} guardrail eval${cases.length === 1 ? "" : "s"}, judged by claude-opus-4-8\n`);
 
 let failed = 0;
 

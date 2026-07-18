@@ -1,6 +1,6 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, recordUsage, withRetry } from "./run";
+import { withRetry } from "./run";
+import { generateStructured } from "./cloudflare";
 
 export const GoalAnalysisSchema = z.object({
   objective: z.string().describe("The core objective, cleanly restated, e.g. 'Acquire users'"),
@@ -41,16 +41,7 @@ Derive the structured analysis:
 }
 
 export async function analyzeGoal(input: GoalInput): Promise<GoalAnalysis> {
-  return withRetry(async () => {
-    const response = await anthropic().messages.parse({
-      model: MODEL,
-      max_tokens: 4096,
-      thinking: { type: "adaptive" },
-      output_config: { format: zodOutputFormat(GoalAnalysisSchema) },
-      messages: [{ role: "user", content: buildPrompt(input) }],
-    });
-    recordUsage(response.usage);
-    if (!response.parsed_output) throw new Error("Model returned no parsable goal analysis");
-    return response.parsed_output;
-  });
+  // Cloudflare Workers AI (free). generateStructured re-validates against the schema and
+  // records usage; withRetry covers the occasional non-conforming JSON.
+  return withRetry(() => generateStructured(buildPrompt(input), GoalAnalysisSchema));
 }

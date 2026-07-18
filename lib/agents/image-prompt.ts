@@ -1,6 +1,6 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, oneLine, recordUsage, withRetry } from "./run";
+import { oneLine, withRetry } from "./run";
+import { generateStructured } from "./cloudflare";
 
 export const ImagePromptSchema = z.object({
   prompt: z
@@ -40,9 +40,11 @@ cannot read your intent, only your description.
 Rules:
 - No words, text, letters, numbers, labels, or UI copy anywhere in the image. This model renders
   text as convincing-looking gibberish. Say "no text" in the prompt itself.
-- No charts, graphs, dashboards, metrics, counters, or up-and-to-the-right lines. An invented
-  statistic is a lie whether it is written in a sentence or drawn in a picture, and you do not
-  know this product's numbers.
+- No charts, graphs, dashboards, metrics, counters, or up-and-to-the-right lines. And no growth
+  motif of ANY kind, even abstract or "subtle": no rising arrow, ascending shape, upward trend in
+  the composition, or anything that implies things are going up or improving. A picture that
+  implies a result is claiming one you cannot support. An invented statistic is a lie whether
+  written in a sentence or drawn in a picture, and you do not know this product's numbers.
 - No fake product screenshots or invented UI. You have not seen ${input.productName} and cannot
   depict what it looks like.
 - No logos, brand marks, or recognisable real people. No faces presented as customers — a
@@ -62,20 +64,13 @@ export function formatImagePrompt(p: ImagePrompt): string {
 }
 
 export async function writeImagePrompt(input: ImagePromptInput): Promise<ImagePrompt> {
+  // Cloudflare Workers AI (free) writes the prompt; the FLUX render (also Cloudflare, free)
+  // happens downstream in image-generator.ts. generateStructured re-validates + records usage.
   return withRetry(async () => {
-    const response = await anthropic().messages.parse({
-      model: MODEL,
-      max_tokens: 2000,
-      thinking: { type: "adaptive" },
-      output_config: { format: zodOutputFormat(ImagePromptSchema) },
-      messages: [{ role: "user", content: buildPrompt(input) }],
-    });
-    recordUsage(response.usage);
-    if (!response.parsed_output) throw new Error("Model returned no parsable image prompt");
-    const parsed = response.parsed_output;
+    const parsed = await generateStructured(buildPrompt(input), ImagePromptSchema);
     if (!parsed.prompt.trim()) throw new Error("Model returned an empty image prompt");
-    // Single-line: the prompt is sent verbatim as a JSON string field to Cloudflare, and the
-    // same stray-control-character problem that hit launch timing applies here.
+    // Single-line: the prompt is sent verbatim as a JSON string field to the image model, and
+    // the same stray-control-character problem that hit launch timing applies here.
     return { ...parsed, prompt: oneLine(parsed.prompt) };
   });
 }

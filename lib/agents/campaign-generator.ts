@@ -1,6 +1,6 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, recordUsage, withRetry } from "./run";
+import { withRetry } from "./run";
+import { generateStructured } from "./cloudflare";
 import type { GoalAnalysis } from "./goal-analyzer";
 
 export const CampaignPlanSchema = z.object({
@@ -69,18 +69,10 @@ Create exactly one Plan per channel:
 }
 
 export async function generateCampaignPlan(input: GeneratorInput): Promise<CampaignPlan> {
+  // Cloudflare Workers AI (free). This is the deepest schema (plans → todos); the helper's
+  // default max_tokens is set high enough to keep the nested JSON from truncating (verified).
   return withRetry(async () => {
-    const response = await anthropic().messages.parse({
-      model: MODEL,
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
-      output_config: { format: zodOutputFormat(CampaignPlanSchema) },
-      messages: [{ role: "user", content: buildPrompt(input) }],
-    });
-    recordUsage(response.usage);
-    if (!response.parsed_output) throw new Error("Model returned no parsable campaign plan");
-
-    const plan = response.parsed_output;
+    const plan = await generateStructured(buildPrompt(input), CampaignPlanSchema);
     // channel_index must reference a real selected channel; a bad index is
     // malformed output, so throwing here lets withRetry re-run the call.
     for (const p of plan.plans) {

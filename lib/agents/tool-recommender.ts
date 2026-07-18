@@ -1,6 +1,6 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { MODEL, anthropic, recordUsage, withRetry } from "./run";
+import { withRetry } from "./run";
+import { generateStructured } from "./cloudflare";
 
 export const ToolRecommendationSchema = z.object({
   tools: z
@@ -63,18 +63,9 @@ for a "write the post" todo). Leave a todo unassigned when no tool fits — most
 export async function recommendTools(input: RecommenderInput): Promise<ToolRecommendation> {
   if (input.catalog.length === 0) return { tools: [], todo_tools: [] };
 
+  // Cloudflare Workers AI (free). generateStructured re-validates + records usage.
   return withRetry(async () => {
-    const response = await anthropic().messages.parse({
-      model: MODEL,
-      max_tokens: 4000,
-      thinking: { type: "adaptive" },
-      output_config: { format: zodOutputFormat(ToolRecommendationSchema) },
-      messages: [{ role: "user", content: buildPrompt(input) }],
-    });
-    recordUsage(response.usage);
-    if (!response.parsed_output) throw new Error("Model returned no parsable tool recommendation");
-
-    const rec = response.parsed_output;
+    const rec = await generateStructured(buildPrompt(input), ToolRecommendationSchema);
     // Out-of-range indices are malformed output; throwing lets withRetry re-run the call.
     for (const t of rec.tools) {
       if (t.tool_index >= input.catalog.length) {
