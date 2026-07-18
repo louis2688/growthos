@@ -486,6 +486,25 @@ export async function restoreCampaign(campaignId: string): Promise<{ error: stri
  */
 export async function deleteCampaign(campaignId: string): Promise<{ error: string } | undefined> {
   const db = await createClient();
+  // RLS-scoped read AUTHORIZES the service-client storage purge below: only the owner can see
+  // the campaign, so this action can't be used to delete another user's images by id.
+  const { data: campaign } = await db.from("campaigns").select("id").eq("id", campaignId).single();
+  if (!campaign) return { error: "Campaign not found." };
+
+  // Purge generated images BEFORE the row delete: the bucket is public-by-URL, so an orphaned
+  // object would stay readable forever with no DB record pointing at it (the privacy policy
+  // promises deletion removes them). Best-effort — a storage blip must not leave the user
+  // unable to delete their campaign.
+  try {
+    const storage = createServiceClient().storage.from(IMAGE_BUCKET);
+    const { data: objects } = await storage.list(campaignId);
+    if (objects?.length) {
+      await storage.remove(objects.map((o) => `${campaignId}/${o.name}`));
+    }
+  } catch {
+    // Proceed with the row delete regardless.
+  }
+
   const { error } = await db.from("campaigns").delete().eq("id", campaignId);
   if (error) return { error: error.message };
 
@@ -673,9 +692,30 @@ export async function clearTodoOutput(
   campaignId: string,
 ): Promise<{ error: string } | undefined> {
   const db = await createClient();
+  // RLS-scoped read authorizes the service-client image removal below, and supplies the REAL
+  // campaign_id for the storage path rather than trusting the caller's parameter.
+  const { data: todo } = await db
+    .from("todos")
+    .select("id, campaign_id, output_image_url")
+    .eq("id", todoId)
+    .single();
+  if (!todo) return { error: "Todo not found." };
+
+  // Discarding an image output also deletes the object — the bucket is public-by-URL, so
+  // leaving it would keep a "discarded" image readable forever. Best-effort.
+  if (todo.output_image_url) {
+    try {
+      await createServiceClient()
+        .storage.from(IMAGE_BUCKET)
+        .remove([imagePath(todo.campaign_id, todo.id)]);
+    } catch {
+      // The column clear below still hides it from the UI.
+    }
+  }
+
   const { error } = await db
     .from("todos")
-    .update({ output: null, output_tool_id: null })
+    .update({ output: null, output_tool_id: null, output_image_url: null })
     .eq("id", todoId);
   if (error) return { error: error.message };
   revalidatePath(`/campaigns/${campaignId}`);

@@ -67,7 +67,7 @@ const faqs: { q: string; a: string }[] = [
   },
   {
     q: "Can I share my campaign roadmap publicly?",
-    a: "Not yet. Public, read-only campaign sharing is on the roadmap, not live today — so we won't pretend it is. For now your campaigns stay private to your workspace.",
+    a: "Not yet. Public, read-only campaign sharing is on the roadmap, not live today — so we won't pretend it is. Your campaign data stays private to your workspace; the one exception is generated images, which are served by public (unguessable) links while they exist — see the Privacy Policy.",
   },
 ];
 

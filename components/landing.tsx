@@ -297,6 +297,12 @@ export default function Landing() {
             <Link href="/tools/subreddit-finder" className="hover:text-foreground">
               Subreddit Finder
             </Link>
+            <Link href="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-foreground">
+              Terms
+            </Link>
             <Link href="/login" className="hover:text-foreground">
               Log in
             </Link>
