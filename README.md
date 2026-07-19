@@ -4,6 +4,16 @@ AI Growth Operating System — describe your product and goal, and Claude
 generates a growth campaign: 3–5 channels and 15–30 prioritized todos with
 tool recommendations, managed on a channel-filterable dashboard.
 
+Live at [www.launchlift.app](https://www.launchlift.app).
+
+## Screenshots
+
+![Landing page](docs/screenshots/landing.png)
+
+![Campaign dashboard](docs/screenshots/dashboard.png)
+
+![Todo board](docs/screenshots/board.png)
+
 ## Stack
 
 Next.js 16 (App Router) · Supabase Postgres · Anthropic Claude (`claude-opus-4-8`) · Vercel
