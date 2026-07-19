@@ -1,0 +1,15 @@
+# GrowthOS by LaunchLift
+
+> AI growth marketing platform for indie hackers. Describe a goal in plain English ("get my first 50 beta testers") and GrowthOS runs live web search to find the specific communities where that audience actually is — named subreddits, communities, directories, newsletters — then turns it into a structured campaign: Goal, Channels, Plans, and prioritized Todos with draft copy for each.
+
+Key facts:
+- Free during early access, no card required. Planned tiers: Indie (free) and Growth ($29/month).
+- Every AI draft is checked against guardrails that block hype, fabricated stats, and undisclosed self-promotion.
+- GrowthOS drafts and recommends; it never posts or publishes anything on the user's behalf.
+- Channel research uses live web search, not a static list.
+
+Pages:
+- [Home](https://www.launchlift.app/): product overview and a free, no-signup campaign preview.
+- [Pricing](https://www.launchlift.app/pricing): plans, usage limits, and FAQ.
+- [Subreddit & Community Finder](https://www.launchlift.app/tools/subreddit-finder): free tool, no signup — finds active communities for a product description.
+- [Privacy](https://www.launchlift.app/privacy) and [Terms](https://www.launchlift.app/terms).

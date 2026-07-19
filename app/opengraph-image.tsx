@@ -67,7 +67,7 @@ export default async function Image() {
             Type a goal. Get a growth campaign.
           </div>
           <div style={{ display: "flex", fontSize: 32, color: "#8595a4" }}>
-            Live-researched channels · prioritized todos · community-safe copy
+            Live-researched channels · prioritized todos · value-first copy
           </div>
           <div style={{ display: "flex", width: 96, height: 6, borderRadius: 100, backgroundColor: "#0064e0" }} />
         </div>

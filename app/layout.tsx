@@ -22,9 +22,11 @@ export const metadata: Metadata = {
   // or every scraper eats a redirect. Without metadataBase, relative OG image URLs resolve
   // against localhost/preview URLs and share cards break.
   metadataBase: new URL("https://www.launchlift.app"),
-  title: "GrowthOS",
+  // Category + audience keyword in the title (Dave's SEO audit §3): brand-only "GrowthOS" gave
+  // search and AI answer engines nothing to classify the entity by.
+  title: "GrowthOS — AI Growth Marketing Platform for Indie Hackers",
   description:
-    "Type a goal. Get a growth campaign — channels found by live web search, prioritized todos, and community-safe copy.",
+    "Type a goal. Get a growth campaign — channels found by live web search, prioritized todos, and value-first copy.",
   openGraph: {
     title: "GrowthOS — type a goal, get a growth campaign",
     description:

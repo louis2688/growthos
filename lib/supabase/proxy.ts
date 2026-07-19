@@ -5,7 +5,20 @@ import { NextResponse, type NextRequest } from "next/server";
 // authed "/toolbox" catalog and un-gate it. Public free tools live under /tools/<name>.
 // "/opengraph-image": the generated share-card PNG has no file extension, so the matcher catches
 // it — without this, social scrapers get a 307 to /login instead of the image.
-const PUBLIC_PATHS = ["/login", "/auth", "/tools/", "/pricing", "/opengraph-image", "/privacy", "/terms"];
+// robots/sitemap/llms: crawler files — gating them served Googlebot/GPTBot a login redirect
+// instead of crawl directives (Dave's SEO audit, verified live).
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth",
+  "/tools/",
+  "/pricing",
+  "/opengraph-image",
+  "/privacy",
+  "/terms",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/llms.txt",
+];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

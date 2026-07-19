@@ -74,9 +74,37 @@ const features = [
   },
 ];
 
+// JSON-LD for search + AI answer engines (Dave's SEO audit): verifiable facts only — no
+// ratings, no usage numbers, nothing we can't back. The object is a compile-time literal
+// (no user input can ever reach it), and "<" is escaped to < — the one character that
+// could break out of a script context — per Next.js's own JSON-LD guidance.
+const structuredData = JSON.stringify({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "LaunchLift",
+      url: "https://www.launchlift.app",
+      logo: "https://www.launchlift.app/icon.png",
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "GrowthOS",
+      url: "https://www.launchlift.app",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description:
+        "AI growth marketing platform for indie hackers: describe a goal, get a structured campaign — communities found by live web search, prioritized todos, and draft copy checked against anti-hype guardrails.",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD", description: "Free early access" },
+      publisher: { "@type": "Organization", name: "LaunchLift" },
+    },
+  ],
+}).replace(/</g, "\\u003c");
+
 export default function Landing() {
   return (
     <div className="min-h-dvh">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
       {/* Header */}
       <header className="glass sticky top-0 z-40 border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">

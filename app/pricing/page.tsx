@@ -66,6 +66,10 @@ const faqs: { q: string; a: string }[] = [
     a: "No — and there's nothing to pay yet. GrowthOS is free during early access: create campaigns, find communities, and generate todos and copy without a card. When paid plans launch we'll make it obvious well before anything charges.",
   },
   {
+    q: "Can I customize the plans, or do I have to do what the AI says?",
+    a: "Everything is editable. Plans and todos are yours to change — edit titles and descriptions, add your own todos, reassign tools, change priorities and due dates, or delete what doesn't fit. Regenerate rebuilds the plans from your selected channels whenever you want a fresh take. The AI drafts; you decide.",
+  },
+  {
     q: "How much can I generate during early access?",
     a: "Every account gets 500 AI credits a month while early access lasts — far more than typical use. Generating a campaign costs 10, launch timing 5, regenerating or images 2, the copywriting tools 1, and the UTM builder is free. Credits are returned if a run fails. Your balance lives in Settings and resets on the 1st; fair daily caps also apply.",
   },
