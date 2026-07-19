@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { BarChart3, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Rocket, Settings, Wrench, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandLockup, BrandMark } from "@/components/brand-mark";
@@ -17,10 +16,8 @@ const navItems = [
   { label: "Campaigns", href: "/", icon: Rocket },
   { label: "Toolbox", href: "/toolbox", icon: Wrench },
   { label: "Activity", href: "/activity", icon: BarChart3 },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
-
-// ponytail: Settings isn't built — visible roadmap, not a dead link.
-const soonItems = [{ label: "Settings", icon: Settings }];
 
 function Nav({
   showLabels,
@@ -54,25 +51,6 @@ function Nav({
           <Icon className="size-4 flex-none" aria-hidden />
           {showLabels && <span>{label}</span>}
         </Link>
-      ))}
-      {soonItems.map(({ label, icon: Icon }) => (
-        <span
-          key={label}
-          title={`${label} — coming in v2`}
-          className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground/60 ${
-            showLabels ? "" : "justify-center px-0"
-          }`}
-        >
-          <Icon className="size-4 flex-none" aria-hidden />
-          {showLabels && (
-            <>
-              <span>{label}</span>
-              <Badge variant="secondary" className="ml-auto text-[10px]">
-                soon
-              </Badge>
-            </>
-          )}
-        </span>
       ))}
       <div className={`mt-auto border-t pt-3 ${showLabels ? "" : "flex flex-col items-center"}`}>
         <div

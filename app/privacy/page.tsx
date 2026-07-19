@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 // Source: docs/plans/privacy-policy.md (Dave's draft), reconciled against actual data practices —
 // notably: Cloudflare Workers AI and Resend added as subprocessors, IP-based rate limiting and
-// anonymous tool inputs disclosed, public image bucket noted, and no in-app account deletion.
+// anonymous tool inputs disclosed, and the public image bucket noted.
 export default function PrivacyPage() {
   return (
     <LegalPage title="Privacy Policy" effectiveDate="July 19, 2026">
@@ -114,11 +114,12 @@ export default function PrivacyPage() {
             (cascading delete), subject to provider backups that age out on standard rotation.
           </li>
           <li>
-            There is no in-app account deletion yet — email{" "}
+            You can delete your account any time from <strong>Settings → Delete account</strong> —
+            this removes your campaigns, generated images, and login. Prefer email? Write{" "}
             <a href="mailto:admin@launchlift.app" className="text-primary hover:underline">
               admin@launchlift.app
             </a>{" "}
-            and we&apos;ll delete your account and its data.
+            and we&apos;ll do it for you.
           </li>
           <li>
             Rate-limit counters (including IPs) are keyed by day and automatically purged after 7
