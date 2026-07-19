@@ -1,5 +1,7 @@
 # Product Hunt Launch
 
+**Link:** https://www.launchlift.app (use this exact URL — canonical, matches `og:url`, no redirect hop)
+
 ## Auto-mod / guideline proofing — read before posting
 
 - **Never ask for upvotes, directly or indirectly** ("support us today," "vote for us") — this is Product Hunt's #1 enforcement trigger and can get a launch removed, not just penalized. Nothing below asks for votes; keep it that way in any edits.
@@ -14,6 +16,16 @@ Type a goal. Get a growth campaign — not generic advice.
 **Alt:** AI finds your real audience, drafts copy that won't get you banned
 
 ---
+
+## Launch topics/tags (max 3, pick in this order)
+
+1. **Marketing** — primary category, matches product core function
+2. **Artificial Intelligence** — matches "AI" positioning, high-traffic topic
+3. **SaaS** — matches business model, broad discoverability
+
+**Alternates if one of the above doesn't fit the day's launch:** Developer Tools, Indie Makers, Growth Hacking, Productivity
+
+Pick topics that match what the product actually does — PH reviewers/users flag mismatched topics as a spam signal too.
 
 ## Description
 
@@ -34,11 +46,11 @@ Free during early access, no card.
 
 Hey Product Hunt 👋
 
-Built this after one too many launches into total silence — I'd finish the product, then freeze on marketing because I didn't know which of a hundred possible channels actually fit, or what to say without sounding like a spambot.
+Built this after one too many launches into total silence — finish the product, freeze on marketing because I don't know which channels fit or what to say without sounding like a spambot.
 
-GrowthOS takes a goal in plain English and turns it into an actual plan: real communities (found by live search, not a static list), prioritized todos, and copy that's checked against rules that block hype and fake claims before you post it anywhere.
+GrowthOS takes a goal and turns it into a plan: real communities (live search, not a static list), prioritized todos, copy checked against rules that block hype and fake claims.
 
-It's free right now while we're in early access. Would genuinely love feedback — especially from anyone who's felt the "great product, no idea how to market it" problem. Happy to answer anything in the comments.
+Free during early access. Would love feedback, especially from anyone who's felt the "great product, no idea how to market it" problem.
 
 ---
 

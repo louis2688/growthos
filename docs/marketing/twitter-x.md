@@ -1,5 +1,7 @@
 # X / Twitter Posts
 
+**Link:** https://www.launchlift.app (use this exact URL — canonical, matches `og:url`, no redirect hop)
+
 Format: single tweets + one thread. Short, direct, no emoji spam, no fabricated numbers.
 
 ## Auto-mod proofing — read before posting
@@ -14,9 +16,9 @@ Format: single tweets + one thread. Short, direct, no emoji spam, no fabricated 
 
 ## Standalone tweet 1
 
-You shipped the product. Now you're staring at a blank Reddit post trying to guess where your users hang out.
+You shipped the product. Now you're staring at a blank Reddit post guessing where your users hang out.
 
-Built GrowthOS to fix that: type a goal, get the specific communities + a checklist of what to post, where, and when.
+GrowthOS: type a goal, get the specific communities + a checklist of what to post and where.
 
 Free during early access — link below.
 

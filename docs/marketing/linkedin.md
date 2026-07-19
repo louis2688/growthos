@@ -1,5 +1,7 @@
 # LinkedIn Posts
 
+**Link:** https://www.launchlift.app (use this exact URL — canonical, matches `og:url`, no redirect hop)
+
 Tone: professional-but-founder, still direct, no corporate buzzwords ("synergy," "leverage," "game-changing" — banned per brand voice).
 
 ## Auto-mod proofing — read before posting
@@ -15,11 +17,11 @@ Tone: professional-but-founder, still direct, no corporate buzzwords ("synergy,"
 
 I've shipped a handful of side projects. All good code. All launched to almost no one.
 
-The pattern was always the same: I'd finish building, open a blank doc titled "marketing plan," and freeze. Not because I didn't know marketing existed — because I didn't know which of the hundred possible channels actually fit my specific product, or what to say that wouldn't read like spam.
+The pattern: finish building, open a blank doc titled "marketing plan," freeze. Not because marketing was a mystery — because I didn't know which of a hundred channels actually fit, or what to say without sounding like spam.
 
-So I built GrowthOS. You describe your goal in plain English — "get my first 50 beta testers" — and it runs a live web search to find the specific communities where that audience already is, then turns that into a dashboard of prioritized todos with draft copy for each one. Every draft gets checked against rules that block hype and fabricated claims before it's ever posted.
+So I built GrowthOS. Describe a goal, it runs a live search for the communities that fit, then turns that into a dashboard of prioritized todos with draft copy — checked against rules that block hype and fabricated claims.
 
-It's free while we're in early access. Built for people who are good at building and have never had time to get good at distribution.
+Free during early access. Built for people who are good at building and never had time to get good at distribution.
 
 If that's you, I'd rather hear what's wrong with it than have you nod politely.
 
@@ -43,4 +45,4 @@ Free during early access.
 
 Shipped a free tool this week: describe your product, get the specific subreddits and communities where your audience is active right now — not a recycled list.
 
-Built it as part of GrowthOS, but it works standalone. Try it: [link]
+Built it as part of GrowthOS, but it works standalone. Try it: https://www.launchlift.app

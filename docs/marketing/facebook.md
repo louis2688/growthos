@@ -1,5 +1,7 @@
 # Facebook Posts
 
+**Link:** https://www.launchlift.app (use this exact URL — canonical, matches `og:url`, no redirect hop)
+
 Target: Indie Hackers FB group, SaaS Founders groups, Startup/Bootstrapper communities, GrowthOS Page.
 
 Tone: warmer/more casual than Reddit, still no hype, still discloses it's your own product in group posts.
@@ -16,9 +18,9 @@ Tone: warmer/more casual than Reddit, still no hype, still discloses it's your o
 
 ## Group post — Indie Hackers / SaaS Founders groups
 
-You spend months building, then launch to zero views because you don't know where your people actually hang out. Built GrowthOS to fix that for myself: type a goal in plain English, it runs a live web search for the real communities that fit, and turns that into a checklist of channels + todos + draft posts (checked against a filter that blocks hype and fake claims before you post).
+You spend months building, then launch to zero views because you don't know where your people hang out. Built GrowthOS to fix that: type a goal, it runs a live search for the real communities that fit, and turns it into a checklist of channels + todos + draft posts (checked against a filter that blocks hype).
 
-Free while it's in early access, no card needed. Would love feedback from anyone here who's felt the "wrote the code, have no idea how to market it" problem.
+Free during early access, no card. Would love feedback from anyone who's hit the "wrote the code, no idea how to market it" wall.
 
 *(link in first comment — check the group's self-promo rules/day before posting)*
 
@@ -28,7 +30,7 @@ Free while it's in early access, no card needed. Would love feedback from anyone
 
 Writing the code is the easy part. Distribution is the hard part.
 
-GrowthOS takes a goal like "get my first 50 users" and turns it into a real plan — the specific communities to post in, prioritized todos, and copy that won't get you flagged as a spammer.
+GrowthOS takes a goal like "get my first 50 users" and turns it into a plan — specific communities, prioritized todos, copy that won't get you flagged as a spammer.
 
 Free during early access. Link in comments.
 
