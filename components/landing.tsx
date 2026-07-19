@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import LandingPreview from "@/components/landing-preview";
 import { BrandLockup, BrandMark } from "@/components/brand-mark";
 
@@ -98,7 +99,7 @@ export default function Landing() {
             <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
               Log in
             </Link>
-            <Link href="/login?mode=signup" className={buttonVariants({ size: "sm" })}>
+            <Link href="/login?mode=signup" className={cn(buttonVariants({ size: "sm" }), "bg-foreground text-background hover:bg-foreground/85")}>
               Start free
             </Link>
           </nav>
@@ -107,16 +108,12 @@ export default function Landing() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_70%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]"
-        />
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 lg:grid-cols-2 lg:py-24">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-[12px] font-semibold text-primary">
               AI-powered distribution for indie hackers
             </span>
-            <h1 className="mt-4 text-balance font-heading text-4xl font-bold leading-[1.1] sm:text-5xl">
+            <h1 className="mt-4 text-balance font-heading text-4xl font-medium leading-[1.1] sm:text-5xl">
               From a raw goal to a live growth playbook, in minutes.
             </h1>
             <p className="mt-4 max-w-prose text-[15px] leading-relaxed text-muted-foreground">
@@ -125,7 +122,7 @@ export default function Landing() {
               native, value-first copy that passes strict community guardrails.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/login?mode=signup" className={buttonVariants({ size: "lg" })}>
+              <Link href="/login?mode=signup" className={cn(buttonVariants({ size: "lg" }), "bg-foreground text-background hover:bg-foreground/85")}>
                 Build your first campaign — free <ArrowRight className="ml-1.5 size-4" aria-hidden />
               </Link>
               <Link
@@ -156,7 +153,7 @@ export default function Landing() {
       {/* Pain */}
       <section className="mx-auto max-w-6xl px-4 py-16">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-balance font-heading text-3xl font-bold">
+          <h2 className="text-balance font-heading text-3xl font-medium">
             You spent months building it. Why launch it to zero views?
           </h2>
           <p className="mt-3 text-balance text-sm text-muted-foreground">
@@ -181,7 +178,7 @@ export default function Landing() {
       <section id="how" className="border-y bg-primary/[0.03]">
         <div className="mx-auto max-w-6xl px-4 py-16">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-balance font-heading text-3xl font-bold">Three steps to your first users.</h2>
+            <h2 className="text-balance font-heading text-3xl font-medium">Three steps to your first users.</h2>
             <p className="mt-3 text-balance text-sm text-muted-foreground">
               GrowthOS turns a high-level goal into a structured, trackable workspace of
               research-validated campaigns.
@@ -190,7 +187,7 @@ export default function Landing() {
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {steps.map((s) => (
               <div key={s.n} className="glass rounded-2xl border p-5">
-                <span className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-brand-pink font-heading font-bold text-white">
+                <span className="grid size-9 place-items-center rounded-full bg-primary font-heading font-bold text-primary-foreground">
                   {s.n}
                 </span>
                 <h3 className="mt-4 font-heading text-base font-semibold">{s.title}</h3>
@@ -204,7 +201,7 @@ export default function Landing() {
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-4 py-16">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-balance font-heading text-3xl font-bold">No fluff. Just structured execution.</h2>
+          <h2 className="text-balance font-heading text-3xl font-medium">No fluff. Just structured execution.</h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {features.map((f) => (
@@ -223,7 +220,7 @@ export default function Landing() {
       <section className="border-y bg-primary/[0.03]">
         <div className="mx-auto max-w-4xl px-4 py-16">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-balance font-heading text-3xl font-bold">How to promote without getting banned.</h2>
+            <h2 className="text-balance font-heading text-3xl font-medium">How to promote without getting banned.</h2>
             <p className="mt-3 text-balance text-sm text-muted-foreground">
               Same product, same subreddit. The difference is what gets you upvoted versus removed by
               a moderator.
@@ -265,7 +262,7 @@ export default function Landing() {
 
       {/* Final CTA */}
       <section className="mx-auto max-w-6xl px-4 py-20 text-center">
-        <h2 className="text-balance font-heading text-3xl font-bold sm:text-4xl">
+        <h2 className="text-balance font-heading text-3xl font-medium sm:text-4xl">
           Your product deserves to be heard.
         </h2>
         <p className="mx-auto mt-3 max-w-prose text-balance text-sm text-muted-foreground">
@@ -273,7 +270,7 @@ export default function Landing() {
           audience is in the next few minutes.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <Link href="/login?mode=signup" className={buttonVariants({ size: "lg" })}>
+          <Link href="/login?mode=signup" className={cn(buttonVariants({ size: "lg" }), "bg-foreground text-background hover:bg-foreground/85")}>
             Build your first campaign — free <ArrowRight className="ml-1.5 size-4" aria-hidden />
           </Link>
           <Link href="/pricing" className={buttonVariants({ variant: "outline", size: "lg" })}>

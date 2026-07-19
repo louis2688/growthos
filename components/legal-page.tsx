@@ -32,7 +32,7 @@ export function LegalPage({
         </nav>
       </div>
 
-      <h1 className="font-heading text-3xl font-bold">{title}</h1>
+      <h1 className="font-heading text-3xl font-medium">{title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Effective {effectiveDate} · GrowthOS by LaunchLift (operating name; a legal entity will be
         designated as the service formalizes) · Contact:{" "}

@@ -19,7 +19,7 @@ export default function SubredditFinderPage() {
         <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
           Free tool · no signup
         </p>
-        <h1 className="mt-2 text-balance font-heading text-3xl font-bold">
+        <h1 className="mt-2 text-balance font-heading text-3xl font-medium">
           Find the communities your audience is actually in
         </h1>
         <p className="mx-auto mt-3 max-w-prose text-balance text-sm text-muted-foreground">

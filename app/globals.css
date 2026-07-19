@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-dm-sans);
+  --font-sans: var(--font-montserrat);
   --font-mono: ui-monospace, monospace;
-  --font-heading: var(--font-space-grotesk);
+  --font-heading: var(--font-montserrat);
   --color-brand-pink: var(--brand-pink);
   --color-brand-indigo: var(--brand-indigo);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -51,33 +51,39 @@
 }
 
 :root {
-  /* GrowthOS design system — see design-system/MASTER.md */
-  --background: #faf5ff;
-  --foreground: #0f172a;
+  /* GrowthOS design system — Meta-derived tokens, see design-system/DESIGN-meta.md.
+     Light is the flagship theme: stark white canvas ({colors.canvas}), ink text
+     ({colors.ink-deep}), cobalt primary ({colors.primary}) reserved for actions,
+     hairline borders, flat surfaces. */
+  --background: #ffffff;
+  --foreground: #0a1317;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #0a1317;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #7c3aed;
+  --popover-foreground: #0a1317;
+  --primary: #0064e0;
   --primary-foreground: #ffffff;
-  --secondary: #ede9fe;
-  --secondary-foreground: #5b21b6;
-  --muted: #f7f3fd;
-  --muted-foreground: #5b5772;
-  --accent: #f3e8ff;
-  --accent-foreground: #0f172a;
-  --destructive: #dc2626;
-  --border: #efe7fc;
-  --input: #e6dcf8;
-  --ring: #7c3aed;
-  --brand-pink: #ec4899;
-  --brand-indigo: #6366f1;
+  --secondary: #f1f4f7;
+  --secondary-foreground: #1c1e21;
+  --muted: #f1f4f7;
+  --muted-foreground: #5d6c7b;
+  --accent: #eaf3ff;
+  --accent-foreground: #0a1317;
+  --destructive: #e41e3f;
+  --border: #dee3e9;
+  --input: #ced0d4;
+  --ring: #0064e0;
+  /* Legacy gradient-endpoint names, remapped into the cobalt family (soft cobalt / deep cobalt)
+     so any straggler usage stays coherent. Rename to --brand-accent/-deep when convenient. */
+  --brand-pink: #0091ff;
+  --brand-indigo: #0457cb;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  /* {rounded.lg} 8px is the form-control base; cards derive 2xl≈14px, 3xl≈18px via the scale. */
+  --radius: 0.5rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -89,26 +95,29 @@
 }
 
 .dark {
-  --background: #12101c;
-  --foreground: #f3f0fb;
-  --card: #201a38;
-  --card-foreground: #f3f0fb;
-  --popover: #201a38;
-  --popover-foreground: #f3f0fb;
-  --primary: #8b5cf6;
-  --primary-foreground: #ffffff;
-  --secondary: #2a2350;
-  --secondary-foreground: #d6c9f8;
-  --muted: #1a1530;
-  --muted-foreground: #a79fc4;
-  --accent: #2a2350;
-  --accent-foreground: #f3f0fb;
-  --destructive: #f87171;
-  --border: rgba(167, 139, 250, 0.18);
-  --input: rgba(167, 139, 250, 0.24);
-  --ring: #8b5cf6;
-  --brand-pink: #f472b6;
-  --brand-indigo: #6366f1;
+  /* Meta publishes no dark tokens (DESIGN-meta.md "Known Gaps") — this is a restrained
+     derivation: neutral ink-deep canvas (no purple cast), soft-cobalt primary with dark label
+     for AA contrast both as fill and as text-primary on the canvas. */
+  --background: #0b0f14;
+  --foreground: #f2f4f7;
+  --card: #12171d;
+  --card-foreground: #f2f4f7;
+  --popover: #12171d;
+  --popover-foreground: #f2f4f7;
+  --primary: #0091ff;
+  --primary-foreground: #06121e;
+  --secondary: #1a222b;
+  --secondary-foreground: #dbe3ea;
+  --muted: #151b22;
+  --muted-foreground: #8595a4;
+  --accent: #10233c;
+  --accent-foreground: #dbe9fb;
+  --destructive: #f0284a;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #0091ff;
+  --brand-pink: #0091ff;
+  --brand-indigo: #0064e0;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -130,15 +139,8 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(60rem 40rem at 8% -10%, #ede4ff, transparent 60%),
-      radial-gradient(50rem 36rem at 105% 15%, #ffe4f3, transparent 55%),
-      radial-gradient(46rem 40rem at 50% 115%, #e4e9ff, transparent 55%);
-    background-attachment: fixed;
-  }
-  .dark body {
-    background-image: radial-gradient(60rem 40rem at 8% -10%, #241b45, transparent 60%),
-      radial-gradient(50rem 36rem at 105% 15%, #3b1230, transparent 55%),
-      radial-gradient(46rem 40rem at 50% 115%, #14204a, transparent 55%);
+    /* Flat canvas — DESIGN-meta.md: photography/content is the depth, never decorative meshes. */
+    letter-spacing: -0.01em; /* {typography.body-md} -0.16px at 16px */
   }
   html {
     @apply font-sans;
@@ -147,14 +149,17 @@
   h2,
   h3,
   h4 {
-    font-family: var(--font-space-grotesk), var(--font-dm-sans), sans-serif;
-    letter-spacing: -0.01em;
+    font-family: var(--font-heading), var(--font-sans), sans-serif;
+    font-weight: 500; /* Meta display/heading weight; utilities may override for subtitle-700 roles */
+    letter-spacing: 0; /* headings carry no tracking in the Meta scale */
     text-wrap: balance;
   }
 }
 
 @utility glass {
-  background-color: color-mix(in srgb, var(--card) 75%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* Near-solid surface with a whisper of blur for sticky headers; reads flat-white per the
+     system (elevation is a commerce signal, not a marketing flourish). */
+  background-color: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }

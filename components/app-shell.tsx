@@ -81,7 +81,7 @@ function Nav({
             showLabels ? "" : "justify-center px-0"
           }`}
         >
-          <span className="grid size-8 flex-none place-items-center rounded-full bg-gradient-to-br from-primary to-brand-pink font-heading text-xs font-bold text-white">
+          <span className="grid size-8 flex-none place-items-center rounded-full bg-primary font-heading text-xs font-bold text-primary-foreground">
             {user.initial}
           </span>
           {showLabels && (

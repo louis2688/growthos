@@ -82,7 +82,7 @@ export default function PricingPage() {
 
       <div className="mb-8 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Pricing</p>
-        <h1 className="mt-2 text-balance font-heading text-3xl font-bold sm:text-4xl">
+        <h1 className="mt-2 text-balance font-heading text-3xl font-medium sm:text-4xl">
           Simple pricing. Free while we build.
         </h1>
         <p className="mx-auto mt-3 max-w-prose text-balance text-sm text-muted-foreground">
@@ -109,13 +109,13 @@ export default function PricingPage() {
             }`}
           >
             {t.highlighted && (
-              <span className="absolute -top-2.5 right-5 rounded-full bg-gradient-to-r from-primary to-brand-pink px-2.5 py-0.5 text-[11px] font-semibold text-white">
+              <span className="absolute -top-2.5 right-5 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-white">
                 Planned
               </span>
             )}
             <h2 className="font-heading text-lg font-semibold">{t.name}</h2>
             <p className="mt-2 flex items-baseline gap-1.5">
-              <span className="font-heading text-4xl font-bold tabular-nums">{t.price}</span>
+              <span className="font-heading text-4xl font-medium tabular-nums">{t.price}</span>
               {t.cadence && <span className="text-sm text-muted-foreground">{t.cadence}</span>}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">{t.blurb}</p>
@@ -144,7 +144,7 @@ export default function PricingPage() {
       </p>
 
       <section className="mt-14">
-        <h2 className="mb-4 text-center font-heading text-2xl font-bold">Frequently asked</h2>
+        <h2 className="mb-4 text-center font-heading text-2xl font-medium">Frequently asked</h2>
         <div className="mx-auto max-w-2xl space-y-2.5">
           {faqs.map((f) => (
             <details key={f.q} className="glass group rounded-xl border p-4">

@@ -24,9 +24,9 @@ export default async function Image() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 72,
-          backgroundColor: "#14101f",
-          backgroundImage:
-            "radial-gradient(800px 500px at 85% -10%, rgba(124,58,237,0.45), transparent), radial-gradient(600px 400px at -5% 110%, rgba(236,72,153,0.35), transparent)",
+          // Flat ink-deep panel + cobalt accent, per design-system/DESIGN-meta.md
+          // (card-promo-strip pattern) — no decorative gradients.
+          backgroundColor: "#0a1317",
           color: "#ffffff",
           fontFamily: "sans-serif",
         }}
@@ -66,9 +66,10 @@ export default async function Image() {
           >
             Type a goal. Get a growth campaign.
           </div>
-          <div style={{ display: "flex", fontSize: 32, color: "rgba(255,255,255,0.72)" }}>
+          <div style={{ display: "flex", fontSize: 32, color: "#8595a4" }}>
             Live-researched channels · prioritized todos · community-safe copy
           </div>
+          <div style={{ display: "flex", width: 96, height: 6, borderRadius: 100, backgroundColor: "#0064e0" }} />
         </div>
 
         <div style={{ display: "flex", fontSize: 26, color: "rgba(255,255,255,0.55)" }}>

@@ -166,7 +166,7 @@ export default async function Home() {
                   <p className="mt-0.5 mb-4 text-sm text-muted-foreground">{goalLine}</p>
                   <div className="h-2 overflow-hidden rounded-full bg-primary/10">
                     <span
-                      className="block h-full rounded-full bg-gradient-to-r from-primary to-brand-pink"
+                      className="block h-full rounded-full bg-primary"
                       style={{ width: `${pct}%` }}
                     />
                   </div>

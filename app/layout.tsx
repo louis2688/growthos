@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Space_Grotesk } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import AppShell from "@/components/app-shell";
@@ -7,16 +7,13 @@ import { SiteFooter } from "@/components/site-footer";
 import { currentUser } from "@/lib/supabase/server";
 import "./globals.css";
 
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+// One face for display + body, per DESIGN-meta.md (Optimistic VF's licensed stand-in is its
+// documented fallback, Montserrat). 300 = editorial subheads, 500 = display/headings,
+// 400/700 = body/emphasis.
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -60,7 +57,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${dmSans.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`${montserrat.variable} h-full antialiased`}
     >
       {/* pb-9 reserves room for the fixed SiteFooter so page content never hides behind it. */}
       <body className="min-h-full flex flex-col pb-9">

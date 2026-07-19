@@ -11,7 +11,7 @@ export default async function LoginPage({
     <main className="grid min-h-dvh place-items-center p-4">
       <div className="glass grid w-full max-w-4xl overflow-hidden rounded-2xl border shadow-xl shadow-primary/10 md:grid-cols-[1.05fr_1fr]">
         {/* Brand panel — the pitch, per design-system/ui-mockups.html */}
-        <div className="hidden flex-col justify-between bg-gradient-to-br from-primary via-brand-indigo to-brand-pink p-10 text-white md:flex">
+        <div className="hidden flex-col justify-between bg-[#0a1317] p-10 text-white md:flex">
           {/* Manual lockup: the shared one uses theme muted-foreground, unreadable on this
               gradient — the house line needs white here. */}
           <span className="flex items-center gap-2.5">
