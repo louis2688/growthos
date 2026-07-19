@@ -1,4 +1,4 @@
-# GrowthOS
+# GrowthOS by LaunchLift
 
 AI Growth Operating System — describe your product and goal, and Claude
 generates a growth campaign: 3–5 channels and 15–30 prioritized todos with
