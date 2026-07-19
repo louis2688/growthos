@@ -115,8 +115,8 @@ export default function PrivacyPage() {
           </li>
           <li>
             There is no in-app account deletion yet — email{" "}
-            <a href="mailto:hello@launchlift.app" className="text-primary hover:underline">
-              hello@launchlift.app
+            <a href="mailto:admin@launchlift.app" className="text-primary hover:underline">
+              admin@launchlift.app
             </a>{" "}
             and we&apos;ll delete your account and its data.
           </li>
@@ -132,8 +132,8 @@ export default function PrivacyPage() {
         <p>
           Depending on your jurisdiction, you may have the right to access, correct, export, or
           delete your personal data. Contact{" "}
-          <a href="mailto:hello@launchlift.app" className="text-primary hover:underline">
-            hello@launchlift.app
+          <a href="mailto:admin@launchlift.app" className="text-primary hover:underline">
+            admin@launchlift.app
           </a>{" "}
           to exercise these rights; we respond within the timeframe applicable law requires.
         </p>
