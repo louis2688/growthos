@@ -16,7 +16,7 @@ Live at [www.launchlift.app](https://www.launchlift.app).
 
 ## Stack
 
-Next.js 16 (App Router) · Supabase Postgres · Anthropic Claude (`claude-opus-4-8`) · Vercel
+Next.js 16 (App Router) · Supabase Postgres · Vercel · Resend
 
 ## Setup
 
