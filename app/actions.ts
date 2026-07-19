@@ -23,6 +23,7 @@ import {
   GENERATION_COST,
   REGENERATE_COST,
   creditStatus,
+  refundCredits,
   spendCredits,
 } from "@/lib/credits";
 import { traced } from "@/lib/agents/trace";
@@ -56,25 +57,32 @@ async function userQuotaError(kind: "agent" | "search", userId?: string): Promis
 }
 
 /**
- * Monthly credit charge — the agreed metering model (one pool, every AI call priced, deducted
- * BEFORE the call, charge-on-attempt). Sits on top of the daily caps, which stay as abuse
- * backstops. Fail-closed like the quota check.
+ * Monthly credit charge — the agreed metering model: one pool, every AI call priced, deducted
+ * BEFORE the call, refunded on failure (callers refundCredits in their catch). Returns the
+ * charged user id so the failure path knows whom to refund. Sits on top of the daily caps,
+ * which stay as abuse backstops and DO count failed attempts. Fail-closed like the quota check.
  */
-async function creditError(cost: number, userId?: string): Promise<string | null> {
-  if (cost === 0) return null;
+async function chargeCredits(
+  cost: number,
+  userId?: string,
+): Promise<{ error: string } | { userId: string }> {
   const id = userId ?? (await currentUser())?.id;
-  if (!id) return "Your session expired — please log in again.";
+  if (!id) return { error: "Your session expired — please log in again." };
+  if (cost === 0) return { userId: id };
   try {
-    if ((await spendCredits(id, cost)).ok) return null;
+    if ((await spendCredits(id, cost)).ok) return { userId: id };
     // Refused: say what this action needs vs what's left — "used all your credits" would be
     // false (and contradict the settings meter) when a cheaper action still works.
     const { spent, allowance } = await creditStatus(id);
     const left = Math.max(0, allowance - spent);
-    return left === 0
-      ? `You've used all ${allowance} of this month's AI credits — they reset on the 1st. Paid top-ups arrive with billing.`
-      : `Not enough credits for this — it needs ${cost} and you have ${left} of ${allowance} left this month. Cheaper actions still work; everything resets on the 1st.`;
+    return {
+      error:
+        left === 0
+          ? `You've used all ${allowance} of this month's AI credits — they reset on the 1st. Paid top-ups arrive with billing.`
+          : `Not enough credits for this — it needs ${cost} and you have ${left} of ${allowance} left this month. Cheaper actions still work; everything resets on the 1st.`,
+    };
   } catch {
-    return "AI actions are briefly unavailable — please try again shortly.";
+    return { error: "AI actions are briefly unavailable — please try again shortly." };
   }
 }
 
@@ -187,8 +195,8 @@ export async function confirmGoal(
   // The generation charge lands here — the step that fires the paid web search. It covers the
   // whole wizard (research + plan generation); the later generatePlans step charges nothing so
   // a retry after a plan-generation failure stays free.
-  const creditErr = await creditError(GENERATION_COST);
-  if (creditErr) return { error: creditErr };
+  const charge = await chargeCredits(GENERATION_COST);
+  if ("error" in charge) return { error: charge.error };
 
   try {
     const research = await traced(db, { agent: "channel_research", campaign_id: campaignId }, () =>
@@ -220,7 +228,10 @@ export async function confirmGoal(
     if (stErr) throw new Error(stErr.message);
   } catch (err) {
     console.error("confirmGoal failed:", err);
-    return { error: "Channel research failed — your goal is saved. Please try again." };
+    await refundCredits(charge.userId, GENERATION_COST);
+    return {
+      error: "Channel research failed — your goal is saved and your credits were returned. Please try again.",
+    };
   }
 
   redirect(`/campaigns/${campaignId}/channels`);
@@ -394,10 +405,9 @@ export async function generatePlans(
     .from("plans")
     .select("id", { count: "exact", head: true })
     .eq("campaign_id", campaignId);
-  if ((planCount ?? 0) > 0) {
-    const creditErr = await creditError(REGENERATE_COST);
-    if (creditErr) return { error: creditErr };
-  }
+  const generateCost = (planCount ?? 0) > 0 ? REGENERATE_COST : 0;
+  const charge = await chargeCredits(generateCost);
+  if ("error" in charge) return { error: charge.error };
 
   try {
     const result = await traced(db, { agent: "campaign_generator", campaign_id: campaignId }, () =>
@@ -431,6 +441,7 @@ export async function generatePlans(
     console.error("generatePlans failed:", err);
     // Clear half-written plans so a retry starts clean; selection is preserved.
     await db.from("plans").delete().eq("campaign_id", campaignId);
+    await refundCredits(charge.userId, generateCost);
     return { error: "Plan generation failed — your channel picks are saved. Please try again." };
   }
 
@@ -483,8 +494,8 @@ export async function regenerateCampaign(
   const quotaErr = await userQuotaError("agent");
   if (quotaErr) return { error: quotaErr };
   // Cheap on purpose: regenerate reuses the researched channels, no new web search.
-  const creditErr = await creditError(REGENERATE_COST);
-  if (creditErr) return { error: creditErr };
+  const charge = await chargeCredits(REGENERATE_COST);
+  if ("error" in charge) return { error: charge.error };
 
   try {
     // Generate BEFORE deleting: a failed generation leaves the campaign untouched.
@@ -504,9 +515,10 @@ export async function regenerateCampaign(
     await insertPlansAndTodos(db, campaignId, selected, result.plans, catalog);
   } catch (err) {
     console.error("regenerateCampaign failed:", err);
+    await refundCredits(charge.userId, REGENERATE_COST);
     revalidatePath(`/campaigns/${campaignId}`);
     return {
-      error: "Regeneration failed — the campaign may be missing plans. Click Regenerate to try again.",
+      error: "Regeneration failed — the campaign may be missing plans and your credits were returned. Click Regenerate to try again.",
     };
   }
 
@@ -670,8 +682,8 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
   // Cloudflare pool.
   const quotaErr = await userQuotaError(handler === "launch_timing" ? "search" : "agent");
   if (quotaErr) return { error: quotaErr };
-  const creditErr = await creditError(CREDIT_COSTS[handler]);
-  if (creditErr) return { error: creditErr };
+  const charge = await chargeCredits(CREDIT_COSTS[handler]);
+  if ("error" in charge) return { error: charge.error };
 
   try {
     const shared = {
@@ -780,8 +792,9 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
     if (error) throw new Error(error.message);
   } catch (err) {
     console.error(`runTodoTool failed for todo ${todoId}:`, err);
+    await refundCredits(charge.userId, CREDIT_COSTS[handler]);
     // Any previous output is left intact — a failed re-run shouldn't destroy a good draft.
-    return { error: `${(tool as Tool).name} failed to run. Please try again.` };
+    return { error: `${(tool as Tool).name} failed to run — your credits were returned. Please try again.` };
   }
 
   revalidatePath(`/campaigns/${todo.campaign_id}`);

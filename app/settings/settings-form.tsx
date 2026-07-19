@@ -135,8 +135,8 @@ export default function SettingsForm({
           </div>
           <p className="mt-3 text-[13px] text-muted-foreground">
             Every AI action draws from this pool: campaign generation 10 · launch timing 5 ·
-            regenerate 2 · images 2 · post, SEO, and email writers 1 · UTM builder free. Paid
-            plans and top-ups arrive with billing.
+            regenerate 2 · images 2 · post, SEO, and email writers 1 · UTM builder free. Credits
+            are returned if a run fails. Paid plans and top-ups arrive with billing.
           </p>
         </div>
       </section>

@@ -31,9 +31,9 @@ export const MONTHLY_ALLOWANCE = 500;
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 
 /**
- * Charge-on-attempt, before the AI call, same posture as the daily quotas: a failed run still
- * burned tokens, so refunds would make a flaky upstream unmetered. Throws on limiter failure —
- * callers fail closed.
+ * Deducted before the AI call, refunded on failure (refundCredits below). The daily quotas
+ * still count failed attempts and never refund, so forced failures stay bounded without the
+ * charge. Throws on limiter failure — callers fail closed.
  */
 export async function spendCredits(
   userId: string,
@@ -48,6 +48,26 @@ export async function spendCredits(
   });
   if (error) throw new Error(`Credit check failed: ${error.message}`);
   return data === -1 ? { ok: false } : { ok: true, remaining: data as number };
+}
+
+/**
+ * Returns a failed run's credits. Best-effort by design: the user is already seeing the run's
+ * error, and a refund blip must not replace it — a lost refund is pennies, a swallowed error
+ * is a confused user. Clamped at 0 server-side. A run that straddles midnight on the 1st
+ * refunds into the new month's row (or clamps to nothing) — accepted, it's pennies once a month.
+ */
+export async function refundCredits(userId: string, cost: number): Promise<void> {
+  if (cost === 0) return;
+  try {
+    const { error } = await createServiceClient().rpc("refund_credits", {
+      p_user_id: userId,
+      p_month: currentMonth(),
+      p_cost: cost,
+    });
+    if (error) throw new Error(error.message);
+  } catch (err) {
+    console.error(`credit refund failed for ${userId} (+${cost}):`, err);
+  }
 }
 
 /** For the settings meter. Missing row = nothing spent this month. */
