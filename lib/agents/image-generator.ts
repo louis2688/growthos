@@ -21,6 +21,36 @@ export function imagePath(campaignId: string, todoId: string): string {
   return `${campaignId}/${todoId}.jpg`;
 }
 
+/**
+ * Removes EVERY object under a campaign's storage folder. storage.list() silently pages at
+ * 100 objects, so a single list+remove leaves objects 101+ behind — in a public-by-URL
+ * bucket that's a privacy-policy violation, not a leak of convenience. Loops until the
+ * folder is empty; storage-js reports failures via the returned error (it never throws),
+ * so callers must check the result.
+ */
+export async function purgeCampaignImages(
+  storage: {
+    list(
+      path: string,
+      options?: { limit?: number },
+    ): Promise<{ data: { name: string }[] | null; error: { message: string } | null }>;
+    remove(paths: string[]): Promise<{ data: unknown; error: { message: string } | null }>;
+  },
+  campaignId: string,
+): Promise<{ error?: string }> {
+  // ponytail: 100 pages = 10k objects, far beyond any real campaign; bail rather than spin.
+  for (let page = 0; page < 100; page++) {
+    const { data: objects, error: listError } = await storage.list(campaignId, { limit: 100 });
+    if (listError) return { error: listError.message };
+    if (!objects?.length) return {};
+    const { error: removeError } = await storage.remove(
+      objects.map((o) => `${campaignId}/${o.name}`),
+    );
+    if (removeError) return { error: removeError.message };
+  }
+  return { error: "Campaign folder has too many objects to purge." };
+}
+
 /** FLUX is ~7s; cap a hang well under the 300s function budget so a stuck render fails cleanly. */
 const RENDER_DEADLINE_MS = 60_000;
 

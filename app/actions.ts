@@ -12,7 +12,12 @@ import { composeEmailDigest, formatEmailDigest } from "@/lib/agents/email-digest
 import { buildUtm, campaignSlug, formatUtm } from "@/lib/agents/utm-builder";
 import { formatTiming, recommendTiming } from "@/lib/agents/launch-timing";
 import { formatImagePrompt } from "@/lib/agents/image-prompt";
-import { IMAGE_BUCKET, generateImage, imagePath } from "@/lib/agents/image-generator";
+import {
+  IMAGE_BUCKET,
+  generateImage,
+  imagePath,
+  purgeCampaignImages,
+} from "@/lib/agents/image-generator";
 import { traced } from "@/lib/agents/trace";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient, currentUser } from "@/lib/supabase/server";
@@ -356,6 +361,11 @@ export async function generatePlans(
     );
 
     // Record the selection; clear any prior attempt's plans (cascade removes todos).
+    // The cascade takes the todo rows but not their storage objects — purge the campaign's
+    // image folder first (every image belongs to a todo being replaced), or the public-by-URL
+    // objects outlive their rows. Best-effort: campaign/account deletion re-purges the whole
+    // folder fail-closed, so a blip here can't outlive the account.
+    await purgeCampaignImages(createServiceClient().storage.from(IMAGE_BUCKET), campaignId);
     await db.from("channels").update({ selected: false }).eq("campaign_id", campaignId);
     await db.from("channels").update({ selected: true }).in("id", selectedIds);
     await db.from("plans").delete().eq("campaign_id", campaignId);
@@ -435,6 +445,9 @@ export async function regenerateCampaign(
       }),
     );
 
+    // Same as generatePlans: the plan wipe cascades the todo rows, so their images must go
+    // first or they orphan publicly (best-effort; deletion re-purges the folder).
+    await purgeCampaignImages(createServiceClient().storage.from(IMAGE_BUCKET), campaignId);
     await db.from("plans").delete().eq("campaign_id", campaignId);
     await insertPlansAndTodos(db, campaignId, selected, result.plans, catalog);
   } catch (err) {
@@ -493,16 +506,15 @@ export async function deleteCampaign(campaignId: string): Promise<{ error: strin
 
   // Purge generated images BEFORE the row delete: the bucket is public-by-URL, so an orphaned
   // object would stay readable forever with no DB record pointing at it (the privacy policy
-  // promises deletion removes them). Best-effort — a storage blip must not leave the user
-  // unable to delete their campaign.
-  try {
-    const storage = createServiceClient().storage.from(IMAGE_BUCKET);
-    const { data: objects } = await storage.list(campaignId);
-    if (objects?.length) {
-      await storage.remove(objects.map((o) => `${campaignId}/${o.name}`));
-    }
-  } catch {
-    // Proceed with the row delete regardless.
+  // promises deletion removes them). Fail-closed, NOT best-effort: once the row is gone there
+  // is no path left that can ever reach this folder again, so a silent purge failure would be
+  // a permanent breach — while failing here just means the user retries the delete.
+  const { error: purgeError } = await purgeCampaignImages(
+    createServiceClient().storage.from(IMAGE_BUCKET),
+    campaignId,
+  );
+  if (purgeError) {
+    return { error: "Couldn't remove this campaign's generated images — try deleting again." };
   }
 
   const { error } = await db.from("campaigns").delete().eq("id", campaignId);
@@ -553,7 +565,7 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
 
   const { data: todo } = await db
     .from("todos")
-    .select("id, campaign_id, plan_id, title, description, tool_id")
+    .select("id, campaign_id, plan_id, title, description, tool_id, output_image_url")
     .eq("id", todoId)
     .single();
   if (!todo) return { error: "Todo not found." };
@@ -644,6 +656,16 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
             // read through RLS above, so we're only here for a todo this user owns, and the
             // path is built from that todo's ids. See lib/supabase/service.ts.
             const { prompt, bytes } = await generateImage({ ...shared, channel });
+            // The render took up to 60s — recheck the todo row (RLS) before the service-role
+            // upload, so a campaign or account deleted mid-render can't receive a fresh object
+            // AFTER its folder purge ran. ponytail: a ms-wide check-to-upload window remains;
+            // closing it needs storage lifecycle rules the bucket doesn't have.
+            const { data: stillOwned } = await db
+              .from("todos")
+              .select("id")
+              .eq("id", todo.id)
+              .single();
+            if (!stillOwned) throw new Error("Todo was deleted while the image rendered.");
             const { error: upErr } = await createServiceClient()
               .storage.from(IMAGE_BUCKET)
               .upload(imagePath(todo.campaign_id, todo.id), bytes, {
@@ -669,6 +691,15 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
         ? db.storage.from(IMAGE_BUCKET).getPublicUrl(imagePath(todo.campaign_id, todo.id)).data
             .publicUrl
         : null;
+
+    // Nulling the column alone would strand the old object: public-by-URL, no DB reference,
+    // and clearTodoOutput can never reach it again (it gates on output_image_url). Best-effort
+    // like clearTodoOutput — deletion re-purges the folder if this blips.
+    if (!imageUrl && todo.output_image_url) {
+      await createServiceClient()
+        .storage.from(IMAGE_BUCKET)
+        .remove([imagePath(todo.campaign_id, todo.id)]);
+    }
 
     // Stamp provenance with the artifact so the UI can never caption a draft with a
     // tool that didn't write it.
