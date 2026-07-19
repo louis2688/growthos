@@ -120,7 +120,7 @@ export default function Board({
             }}
           >
             <SelectTrigger className="min-w-[180px]">
-              <SelectValue />
+              <SelectValue className="block! truncate!" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All channels</SelectItem>
@@ -144,7 +144,7 @@ export default function Board({
             onValueChange={(v) => setPlanFilter(String(v))}
           >
             <SelectTrigger className="min-w-[180px]">
-              <SelectValue />
+              <SelectValue className="block! truncate!" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All plans</SelectItem>

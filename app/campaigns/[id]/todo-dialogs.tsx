@@ -58,7 +58,7 @@ function TodoFields({
         <Label htmlFor="description">Description</Label>
         <Textarea id="description" name="description" defaultValue={defaults?.description ?? ""} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 *:min-w-0">
         <div className="space-y-1.5">
           <Label>Plan</Label>
           {/* items maps id -> title; without it Base UI renders the raw uuid in the trigger. */}
@@ -67,8 +67,8 @@ function TodoFields({
             defaultValue={defaults?.plan_id ?? plans[0]?.id}
             items={plans.map((p) => ({ value: p.id, label: p.title }))}
           >
-            <SelectTrigger>
-              <SelectValue />
+            <SelectTrigger className="w-full">
+              <SelectValue className="block! truncate!" />
             </SelectTrigger>
             <SelectContent>
               {plans.map((p) => (
@@ -82,8 +82,8 @@ function TodoFields({
         <div className="space-y-1.5">
           <Label>Priority</Label>
           <Select name="priority" defaultValue={defaults?.priority ?? "medium"}>
-            <SelectTrigger>
-              <SelectValue />
+            <SelectTrigger className="w-full">
+              <SelectValue className="block! truncate!" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="high">high</SelectItem>
@@ -102,8 +102,8 @@ function TodoFields({
               ...selectableTools.map((t) => ({ value: t.id, label: t.name })),
             ]}
           >
-            <SelectTrigger>
-              <SelectValue />
+            <SelectTrigger className="w-full">
+              <SelectValue className="block! truncate!" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={NO_TOOL}>No tool</SelectItem>
@@ -136,8 +136,8 @@ function TodoFields({
               defaultValue={defaults?.status ?? "backlog"}
               items={TODO_STATUSES.map((s) => ({ value: s, label: TODO_STATUS_LABEL[s] }))}
             >
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger className="w-full">
+                <SelectValue className="block! truncate!" />
               </SelectTrigger>
               <SelectContent>
                 {TODO_STATUSES.map((s) => (
