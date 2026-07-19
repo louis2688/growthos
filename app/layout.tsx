@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Analytics } from "@vercel/analytics/next";
 import AppShell from "@/components/app-shell";
 import { SiteFooter } from "@/components/site-footer";
 import { currentUser } from "@/lib/supabase/server";
@@ -66,6 +67,9 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AppShell user={shellUser}>{children}</AppShell>
           <SiteFooter />
+          {/* Vercel Web Analytics: cookieless page analytics (disclosed in /privacy). Data only
+              flows once Web Analytics is enabled on the Vercel project. */}
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

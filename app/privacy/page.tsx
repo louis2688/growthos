@@ -38,8 +38,12 @@ export default function PrivacyPage() {
         <p>
           <strong>IP addresses:</strong> we record client IP addresses to enforce daily
           rate limits on the free tools and on password-reset emails. These are stored as daily
-          counters and serve no other purpose. We do not run third-party analytics or advertising
-          trackers.
+          counters and serve no other purpose.
+        </p>
+        <p>
+          <strong>Page analytics:</strong> we use Vercel Web Analytics (Vercel is already a
+          listed subprocessor) to count page visits and referrers. It is cookieless and does not
+          track you across sites. We run no advertising trackers.
         </p>
         <p>
           We do not collect payment card data. If paid plans go live, billing will be handled by a
