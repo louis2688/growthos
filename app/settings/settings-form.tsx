@@ -21,7 +21,15 @@ function Feedback({ state, saved }: { state: SettingsState; saved: string }) {
   return <p className="text-sm text-muted-foreground">{saved}</p>;
 }
 
-export default function SettingsForm({ email, name }: { email: string; name: string }) {
+export default function SettingsForm({
+  email,
+  name,
+  credits,
+}: {
+  email: string;
+  name: string;
+  credits: { spent: number; allowance: number };
+}) {
   const [nameState, nameAction, namePending] = useActionState<SettingsState, FormData>(
     updateName,
     null,
@@ -102,6 +110,34 @@ export default function SettingsForm({ email, name }: { email: string; name: str
             </div>
             <Feedback state={passwordState} saved="Password updated" />
           </form>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          AI credits this month
+        </h2>
+        <div className="mt-2 rounded-lg border p-4">
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="text-xl font-medium">
+              {credits.allowance - credits.spent}
+              <span className="ml-1 text-sm font-normal text-muted-foreground">
+                of {credits.allowance} left
+              </span>
+            </p>
+            <p className="text-[13px] text-muted-foreground">Resets on the 1st</p>
+          </div>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${Math.min(100, (credits.spent / credits.allowance) * 100)}%` }}
+            />
+          </div>
+          <p className="mt-3 text-[13px] text-muted-foreground">
+            Every AI action draws from this pool: campaign generation 10 · launch timing 5 ·
+            regenerate 2 · images 2 · post, SEO, and email writers 1 · UTM builder free. Paid
+            plans and top-ups arrive with billing.
+          </p>
         </div>
       </section>
 

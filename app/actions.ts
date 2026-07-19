@@ -18,6 +18,13 @@ import {
   imagePath,
   purgeCampaignImages,
 } from "@/lib/agents/image-generator";
+import {
+  CREDIT_COSTS,
+  GENERATION_COST,
+  REGENERATE_COST,
+  creditStatus,
+  spendCredits,
+} from "@/lib/credits";
 import { traced } from "@/lib/agents/trace";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient, currentUser } from "@/lib/supabase/server";
@@ -43,6 +50,29 @@ async function userQuotaError(kind: "agent" | "search", userId?: string): Promis
   if (!id) return "Your session expired — please log in again.";
   try {
     return (await consumeUserQuota(id, kind)) ? null : QUOTA_MSG;
+  } catch {
+    return "AI actions are briefly unavailable — please try again shortly.";
+  }
+}
+
+/**
+ * Monthly credit charge — the agreed metering model (one pool, every AI call priced, deducted
+ * BEFORE the call, charge-on-attempt). Sits on top of the daily caps, which stay as abuse
+ * backstops. Fail-closed like the quota check.
+ */
+async function creditError(cost: number, userId?: string): Promise<string | null> {
+  if (cost === 0) return null;
+  const id = userId ?? (await currentUser())?.id;
+  if (!id) return "Your session expired — please log in again.";
+  try {
+    if ((await spendCredits(id, cost)).ok) return null;
+    // Refused: say what this action needs vs what's left — "used all your credits" would be
+    // false (and contradict the settings meter) when a cheaper action still works.
+    const { spent, allowance } = await creditStatus(id);
+    const left = Math.max(0, allowance - spent);
+    return left === 0
+      ? `You've used all ${allowance} of this month's AI credits — they reset on the 1st. Paid top-ups arrive with billing.`
+      : `Not enough credits for this — it needs ${cost} and you have ${left} of ${allowance} left this month. Cheaper actions still work; everything resets on the 1st.`;
   } catch {
     return "AI actions are briefly unavailable — please try again shortly.";
   }
@@ -153,6 +183,12 @@ export async function confirmGoal(
   // After the goal update on purpose: a quota-blocked user keeps their edits.
   const quotaErr = await userQuotaError("search");
   if (quotaErr) return { error: quotaErr };
+
+  // The generation charge lands here — the step that fires the paid web search. It covers the
+  // whole wizard (research + plan generation); the later generatePlans step charges nothing so
+  // a retry after a plan-generation failure stays free.
+  const creditErr = await creditError(GENERATION_COST);
+  if (creditErr) return { error: creditErr };
 
   try {
     const research = await traced(db, { agent: "channel_research", campaign_id: campaignId }, () =>
@@ -350,6 +386,19 @@ export async function generatePlans(
   const quotaErr = await userQuotaError("agent");
   if (quotaErr) return { error: quotaErr };
 
+  // Free ONLY when the campaign has no plans yet — the wizard's 10cr at confirmGoal covers the
+  // first generation, and a retry after a failed generation finds the plans wiped, so it stays
+  // free too. If plans exist, this IS a regenerate (reachable via Back-to-channels or a direct
+  // action call) and gets the regenerate price — otherwise the 2cr button is free by detour.
+  const { count: planCount } = await db
+    .from("plans")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaignId);
+  if ((planCount ?? 0) > 0) {
+    const creditErr = await creditError(REGENERATE_COST);
+    if (creditErr) return { error: creditErr };
+  }
+
   try {
     const result = await traced(db, { agent: "campaign_generator", campaign_id: campaignId }, () =>
       generateCampaignPlan({
@@ -433,6 +482,9 @@ export async function regenerateCampaign(
 
   const quotaErr = await userQuotaError("agent");
   if (quotaErr) return { error: quotaErr };
+  // Cheap on purpose: regenerate reuses the researched channels, no new web search.
+  const creditErr = await creditError(REGENERATE_COST);
+  if (creditErr) return { error: creditErr };
 
   try {
     // Generate BEFORE deleting: a failed generation leaves the campaign untouched.
@@ -589,12 +641,37 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
     .single();
   if (!channel) return { error: "Campaign data is incomplete." };
 
+  const handler = (tool as Tool).handler!;
+
+  // utm_builder is pure code now — no AI call, so per the credit rule it costs nothing and
+  // skips the metered path entirely. It still clears a stale image if the todo was reassigned
+  // from the image tool (same cleanup as the metered path below).
+  if (handler === "utm_builder") {
+    const slug = campaignSlug(campaign.name);
+    const output = formatUtm(
+      buildUtm({ channel, todo: { title: todo.title, description: todo.description }, campaign: slug }),
+      slug,
+    );
+    if (todo.output_image_url) {
+      await createServiceClient()
+        .storage.from(IMAGE_BUCKET)
+        .remove([imagePath(todo.campaign_id, todo.id)]);
+    }
+    const { error } = await db
+      .from("todos")
+      .update({ output, output_tool_id: todo.tool_id, output_image_url: null })
+      .eq("id", todoId);
+    if (error) return { error: error.message };
+    revalidatePath(`/campaigns/${todo.campaign_id}`);
+    return;
+  }
+
   // launch_timing is the other paid Anthropic web-search path; everything else runs on the
   // Cloudflare pool.
-  const quotaErr = await userQuotaError(
-    (tool as Tool).handler === "launch_timing" ? "search" : "agent",
-  );
+  const quotaErr = await userQuotaError(handler === "launch_timing" ? "search" : "agent");
   if (quotaErr) return { error: quotaErr };
+  const creditErr = await creditError(CREDIT_COSTS[handler]);
+  if (creditErr) return { error: creditErr };
 
   try {
     const shared = {
@@ -625,13 +702,6 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
                 ...(await campaignMilestones(db, todo.campaign_id)),
               }),
             );
-
-          case "utm_builder": {
-            // Derived from the campaign, not sampled per run — every link in a campaign must
-            // carry the same utm_campaign or the analytics report fragments.
-            const slug = campaignSlug(campaign.name);
-            return formatUtm(await buildUtm({ ...shared, channel, campaign: slug }), slug);
-          }
 
           case "launch_timing":
             return formatTiming(

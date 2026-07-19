@@ -56,9 +56,10 @@ export default function TermsPage() {
           only when paid plans actually ship, with notice.
         </p>
         <p>
-          To keep early access free for everyone, AI actions are subject to fair daily usage
-          limits (shown in-product when you reach them). Attempting to circumvent these limits is
-          a violation of these terms.
+          To keep early access free for everyone, AI actions are subject to fair usage limits: a
+          monthly allowance of AI credits (each action's cost and your remaining balance are shown
+          in Settings) plus daily caps, surfaced in-product when you reach them. Attempting to
+          circumvent these limits is a violation of these terms.
         </p>
       </section>
 

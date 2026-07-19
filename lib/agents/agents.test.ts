@@ -6,7 +6,14 @@ import { ToolRecommendationSchema, recommendTools } from "./tool-recommender";
 import { PostDraftSchema, formatDraft } from "./post-writer";
 import { SeoRewriteSchema, formatSeoRewrite } from "./seo-optimizer";
 import { EmailDigestSchema, formatEmailDigest } from "./email-digest";
-import { UtmPlanSchema, campaignSlug, formatUtm, URL_PLACEHOLDER } from "./utm-builder";
+import {
+  UtmPlanSchema,
+  buildUtm,
+  campaignSlug,
+  formatUtm,
+  mediumFor,
+  URL_PLACEHOLDER,
+} from "./utm-builder";
 import { LaunchTimingSchema, formatTiming } from "./launch-timing";
 
 describe("GoalAnalysisSchema", () => {
@@ -235,31 +242,56 @@ describe("formatEmailDigest", () => {
   });
 });
 
-describe("UtmPlanSchema", () => {
-  const valid = {
-    source: "reddit",
-    medium: "social",
-    content: "r_freelance-painpoint",
-    watch: "Signups tagged utm_content=r_freelance-painpoint over the week after posting.",
+describe("buildUtm (pure code — no AI, the free tool)", () => {
+  const input = {
+    channel: { name: "r/freelance", platform: "Reddit", type: "community" },
+    todo: { title: "Post the pain-point thread", description: "..." },
+    campaign: "ledgerlite",
   };
 
-  it("accepts a valid plan", () => {
-    expect(UtmPlanSchema.safeParse(valid).success).toBe(true);
+  it("derives url-safe values that satisfy the schema, deterministically", () => {
+    const a = buildUtm(input);
+    expect(UtmPlanSchema.safeParse(a).success).toBe(true);
+    expect(a).toEqual(buildUtm(input)); // same input, same link — no sampling
+    expect(a.source).toBe("reddit");
+    expect(a.content).toBe("post-the-pain-point-thread");
   });
 
-  // The regex is the guard that stops analytics tools splitting one link across buckets.
-  it("rejects spaces and capitals, which silently fragment attribution", () => {
-    expect(UtmPlanSchema.safeParse({ ...valid, source: "Indie Hackers" }).success).toBe(false);
-    expect(UtmPlanSchema.safeParse({ ...valid, medium: "Social" }).success).toBe(false);
+  it("maps channel context to a conventional medium with referral as the fallback", () => {
+    expect(mediumFor("community", "Reddit")).toBe("social");
+    expect(mediumFor("newsletter", "Substack")).toBe("email");
+    expect(mediumFor("blog", "Medium")).toBe("organic");
+    expect(mediumFor("directory", "BetaList")).toBe("referral");
   });
 
-  // utm_campaign is derived in code, so the model can't sample a different slug per run.
-  it("does not ask the model for utm_campaign at all", () => {
-    expect("campaign" in UtmPlanSchema.shape).toBe(false);
+  it("does not mis-bucket paid, publication-name, or research channels as organic", () => {
+    expect(mediumFor("paid search", "Google Ads")).toBe("cpc");
+    expect(mediumFor("publication", "Search Engine Journal")).toBe("referral");
+    expect(mediumFor("community", "ResearchGate")).toBe("social");
   });
 
-  it("rejects a value that would need url-encoding", () => {
-    expect(UtmPlanSchema.safeParse({ ...valid, content: "post?v=1&x" }).success).toBe(false);
+  it("concatenates utm_source like the old agent convention, so old links keep aggregating", () => {
+    const plan = buildUtm({
+      channel: { name: "IH freelancers", platform: "Indie Hackers", type: "community" },
+      todo: { title: "Intro post", description: "" },
+      campaign: "ledgerlite",
+    });
+    expect(plan.source).toBe("indiehackers");
+  });
+
+  it("never emits an empty value, even for garbage input", () => {
+    const plan = buildUtm({
+      channel: { name: "??", platform: "!!!", type: "" },
+      todo: { title: "***", description: "" },
+      campaign: "campaign",
+    });
+    expect(UtmPlanSchema.safeParse(plan).success).toBe(true);
+  });
+
+  it("names the content tag in the watch note without promising numbers", () => {
+    const plan = buildUtm(input);
+    expect(plan.watch).toContain(`utm_content=${plan.content}`);
+    expect(plan.watch).not.toMatch(/\d+%|\d+ signups/);
   });
 });
 

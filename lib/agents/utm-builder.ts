@@ -1,23 +1,21 @@
 import { z } from "zod";
-import { withRetry } from "./run";
-import { generateStructured } from "./cloudflare";
 
 /**
  * UTM values must be lowercase and URL-safe, or analytics tools split one link across buckets.
  *
- * A factory, not a shared instance: zodOutputFormat hoists a reused schema into $defs and every
- * field collapses to a bare $ref, silently dropping its .describe() before it reaches the model.
+ * This used to be an AI agent; it is now pure code (task #57). The model was only choosing
+ * three slugs and writing a watch note — all derivable from data we already have — and the
+ * agreed credit rule is "every AI call costs credits". Deterministic means it's genuinely the
+ * free tool: no API, no credits, no way to hallucinate, instant.
  */
 const utmValue = () =>
   z.string().regex(/^[a-z0-9][a-z0-9_-]*$/, "lowercase letters, digits, hyphen or underscore only");
 
 export const UtmPlanSchema = z.object({
-  source: utmValue().describe("Where the traffic comes from, normalised — e.g. 'reddit', 'indiehackers'"),
-  medium: utmValue().describe(
-    "Marketing medium using a conventional value analytics tools expect: social, referral, email, organic, cpc",
-  ),
-  content: utmValue().describe("Which specific placement this link is for, so two links never collide"),
-  watch: z.string().describe("What to look at afterwards, and what would count as working."),
+  source: utmValue(),
+  medium: utmValue(),
+  content: utmValue(),
+  watch: z.string(),
 });
 
 export type UtmPlan = z.infer<typeof UtmPlanSchema>;
@@ -27,9 +25,7 @@ export const URL_PLACEHOLDER = "{{YOUR_LANDING_PAGE_URL}}";
 
 /**
  * utm_campaign is the key that makes a campaign's links aggregate into one report, so it must
- * be identical for every link. The model is called once per todo with no memory of prior runs,
- * so asking it for the slug produced a fresh guess each time — derive it from the campaign name
- * instead and it is stable by construction.
+ * be identical for every link — derived from the campaign name, stable by construction.
  */
 export function campaignSlug(name: string): string {
   const slug = name
@@ -40,53 +36,60 @@ export function campaignSlug(name: string): string {
 }
 
 export type UtmBuilderInput = {
-  productName: string;
-  productDescription: string;
-  goal: { objective: string; audience: string };
   channel: { name: string; platform: string; type: string };
-  plan: { title: string; objective: string };
   todo: { title: string; description: string };
   /** Derived by the caller, identical for every link in the campaign. */
   campaign: string;
 };
 
-function buildPrompt(input: UtmBuilderInput): string {
-  return `You are a growth analyst tagging one link so its signups can be attributed.
-
-Product: ${input.productName}
-What it does: ${input.productDescription}
-Goal: ${input.goal.objective}
-Audience: ${input.goal.audience}
-
-Where the link will be posted: ${input.channel.name} on ${input.channel.platform} (a ${input.channel.type} channel)
-Plan: ${input.plan.title} — ${input.plan.objective}
-This specific task: ${input.todo.title} — ${input.todo.description}
-
-utm_campaign is already fixed as "${input.campaign}" — you are choosing the other three for THIS
-placement.
-
-Rules:
-- Every value: lowercase, no spaces, hyphens or underscores only. "Indie Hackers" is not a
-  value; "indiehackers" is.
-- source is the normalised platform, not the full channel title.
-- medium must be a conventional value an analytics tool already understands — social, referral,
-  email, organic, or cpc. Do not invent a new medium.
-- content is what makes THIS placement distinct from every other link in the campaign.
-- For 'watch', say what to actually look at and what result would mean it worked. Be concrete
-  and honest — do not promise numbers, and do not state any figure as if you knew it. You have
-  no access to their analytics.`;
-}
-
-export async function buildUtm(input: UtmBuilderInput): Promise<UtmPlan> {
-  // Cloudflare Workers AI (free). generateStructured re-validates against UtmPlanSchema — so a
-  // value that breaks the lowercase/URL-safe rule throws and withRetry re-runs — and records usage.
-  return withRetry(() => generateStructured(buildPrompt(input), UtmPlanSchema));
+/** Slug with a fallback so a value can never be empty (the schema regex rejects empty). */
+function slugOr(raw: string, fallback: string): string {
+  const slug = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || fallback;
 }
 
 /**
- * Assembles the tagged URL in code rather than letting the model write it: the model
- * supplies only the values, so the URL can't come back malformed — or with an invented
- * domain. The placeholder is deliberately obvious.
+ * medium must be a conventional value analytics tools already understand. Keyword-mapped;
+ * "referral" is the safe default for anything unrecognized. Order matters: paid beats organic
+ * ("paid search" is cpc), and the organic check reads the channel TYPE only — a platform NAMED
+ * "Search Engine Journal" is a publication placement, not organic search. \bsearch\b also keeps
+ * "research" from matching.
+ */
+export function mediumFor(type: string, platform: string): string {
+  const t = type.toLowerCase();
+  const both = `${t} ${platform.toLowerCase()}`;
+  if (/mail|newsletter|digest/.test(both)) return "email";
+  if (/\bads?\b|cpc|ppc|sponsor|paid/.test(both)) return "cpc";
+  if (/\bseo\b|\bsearch\b|blog|organic/.test(t)) return "organic";
+  if (/social|communit|forum|group|reddit|twitter|linkedin|facebook|instagram|tiktok|youtube|discord|slack/.test(both))
+    return "social";
+  return "referral";
+}
+
+export function buildUtm(input: UtmBuilderInput): UtmPlan {
+  const content = slugOr(input.todo.title, "placement");
+  // source is CONCATENATED ("indiehackers", not "indie-hackers") — the old agent's prompted
+  // convention. Links posted before this rewrite used it; hyphenating now would split one
+  // channel's traffic across two utm_source buckets.
+  const source = input.channel.platform.toLowerCase().replace(/[^a-z0-9]/g, "") || "web";
+  return {
+    source,
+    medium: mediumFor(input.channel.type, input.channel.platform),
+    content,
+    // Honest by construction: names what to look at, promises no numbers.
+    watch:
+      `Traffic arriving with utm_content=${content} in your analytics during the week after ` +
+      `posting on ${input.channel.name}. Compare it against your other placements — a steady ` +
+      "trickle that converts beats a spike that doesn't.",
+  };
+}
+
+/**
+ * Assembles the tagged URL in code: values are slug-validated, the campaign key is stable, and
+ * the placeholder is deliberately obvious.
  */
 export function formatUtm(plan: UtmPlan, campaign: string): string {
   const query = [

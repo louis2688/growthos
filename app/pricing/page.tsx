@@ -66,6 +66,10 @@ const faqs: { q: string; a: string }[] = [
     a: "No — and there's nothing to pay yet. GrowthOS is free during early access: create campaigns, find communities, and generate todos and copy without a card. When paid plans launch we'll make it obvious well before anything charges.",
   },
   {
+    q: "How much can I generate during early access?",
+    a: "Every account gets 500 AI credits a month while early access lasts — far more than typical use. Generating a campaign costs 10, launch timing 5, regenerating or images 2, the copywriting tools 1, and the UTM builder is free. Your balance lives in Settings and resets on the 1st; fair daily caps also apply.",
+  },
+  {
     q: "Can I share my campaign roadmap publicly?",
     a: "Not yet. Public, read-only campaign sharing is on the roadmap, not live today — so we won't pretend it is. Your campaign data stays private to your workspace; the one exception is generated images, which are served by public (unguessable) links while they exist — see the Privacy Policy.",
   },
