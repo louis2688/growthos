@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BarChart3, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Rocket, Settings, Wrench, X } from "lucide-react";
+import { BarChart3, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Rocket, Settings, ShieldCheck, Wrench, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandLockup, BrandMark } from "@/components/brand-mark";
@@ -26,7 +26,7 @@ function Nav({
 }: {
   showLabels: boolean;
   onNavigate?: () => void;
-  user: { email: string; name: string; initial: string };
+  user: { email: string; name: string; initial: string; isAdmin: boolean };
 }) {
   const pathname = usePathname();
   const isActive = (href: string) =>
@@ -34,9 +34,14 @@ function Nav({
       ? pathname === "/" || pathname.startsWith("/campaigns") || pathname === "/new"
       : pathname.startsWith(href);
 
+  // Cosmetic gate only — the /admin page enforces the real check server-side.
+  const items = user.isAdmin
+    ? [...navItems, { label: "Admin", href: "/admin", icon: ShieldCheck }]
+    : navItems;
+
   return (
     <nav className="flex flex-1 flex-col gap-1">
-      {navItems.map(({ label, href, icon: Icon }) => (
+      {items.map(({ label, href, icon: Icon }) => (
         <Link
           key={href}
           href={href}
@@ -92,7 +97,7 @@ export default function AppShell({
   user,
 }: {
   children: React.ReactNode;
-  user: { email: string; name: string; initial: string } | null;
+  user: { email: string; name: string; initial: string; isAdmin: boolean } | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);

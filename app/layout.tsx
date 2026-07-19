@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import AppShell from "@/components/app-shell";
 import { SiteFooter } from "@/components/site-footer";
 import { currentUser } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/admin";
 import "./globals.css";
 
 // One face for display + body, per DESIGN-meta.md (Optimistic VF's licensed stand-in is its
@@ -52,6 +53,8 @@ export default async function RootLayout({
         email,
         name: (user.user_metadata?.full_name as string) ?? email.split("@")[0],
         initial: (email[0] ?? "?").toUpperCase(),
+        // Boolean only — the shell is a client component and must not import lib/admin.
+        isAdmin: isAdmin(email),
       }
     : null;
 
