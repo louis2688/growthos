@@ -1,7 +1,8 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { HAIKU, anthropic, deadlineSignal, recordUsage } from "./run";
+import { AGENT_DEADLINE_MS, HAIKU, anthropic, deadlineSignal, recordModel, recordUsage } from "./run";
+import { cheapResearchChannels, isCheapResearchConfigured } from "./cheap-research";
 import type { GoalAnalysis } from "./goal-analyzer";
 
 export const ChannelResearchSchema = z.object({
@@ -52,7 +53,37 @@ knowledge but mark those confidence "low".`;
 // web_search_20250305, not _20260209: Haiku only supports the older tool variant (verified).
 const tools = [{ type: "web_search_20250305" as const, name: "web_search" as const, max_uses: 4 }];
 
+/**
+ * Facade: uses the self-hosted Serper + Firecrawl + Cloudflare pipeline when its keys are
+ * configured (task #70 — ~half the cost per run), with THIS Haiku path as the fallback both
+ * when the keys are absent and when the cheap pipeline fails at runtime. Call sites and
+ * behavior without keys are unchanged.
+ *
+ * ACTIVATION GATE (task #70): do NOT set SERPER_API_KEY + FIRECRAWL_API_KEY in production
+ * until a side-by-side quality comparison against this Haiku path has been run — no eval
+ * currently exercises channel research, so the keys are the only thing standing between an
+ * unmeasured synthesizer swap and real users.
+ */
 export async function researchChannels(
+  input: ChannelResearchInput,
+  opts: { deadlineMs?: number } = {},
+): Promise<ChannelResearch> {
+  if (!isCheapResearchConfigured()) return researchChannelsHaiku(input, opts);
+
+  const started = Date.now();
+  try {
+    return await cheapResearchChannels(input);
+  } catch (err) {
+    console.error("cheap research failed, falling back to Haiku:", err);
+    // Hand the fallback only the time that's actually left, or Vercel kills the function
+    // before our own deadline fires (same reasoning as the preview's chained budget).
+    const remaining = (opts.deadlineMs ?? AGENT_DEADLINE_MS) - (Date.now() - started);
+    if (remaining < 45_000) throw new Error("Research ran out of time — please try again.");
+    return researchChannelsHaiku(input, { deadlineMs: remaining });
+  }
+}
+
+export async function researchChannelsHaiku(
   input: ChannelResearchInput,
   // deadlineMs: callers that run ANOTHER agent in the same function invocation (the homepage
   // preview chains goal analysis first) must pass their REMAINING budget — the default 240s
@@ -60,6 +91,9 @@ export async function researchChannels(
   // slow analysis phase would let Vercel kill the function before our own catch fires.
   opts: { deadlineMs?: number } = {},
 ): Promise<ChannelResearch> {
+  // Re-stamp on the fallback path so a run the cheap pipeline started but Haiku finished
+  // prices as Haiku (last writer wins in recordModel).
+  recordModel(HAIKU);
   // Deliberately NOT wrapped in withRetry: this agent runs several web searches, and a
   // retry re-runs the whole conversation from scratch — the most expensive call in the app,
   // charged twice. Its callers already catch and surface a user-facing retry, so an internal

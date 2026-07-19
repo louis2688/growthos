@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GoalAnalysisSchema } from "./goal-analyzer";
 import { ChannelResearchSchema } from "./channel-research";
+import { buildQueries, pickUrls } from "./cheap-research";
 import { CampaignPlanSchema } from "./campaign-generator";
 import { ToolRecommendationSchema, recommendTools } from "./tool-recommender";
 import { PostDraftSchema, formatDraft } from "./post-writer";
@@ -74,6 +75,47 @@ describe("ChannelResearchSchema", () => {
     expect(ChannelResearchSchema.safeParse({ channels: valid.channels.slice(0, 2) }).success).toBe(
       false,
     );
+  });
+});
+
+describe("cheap research pipeline (pure parts)", () => {
+  const input = {
+    productName: "LedgerLite",
+    productDescription: "Simple bookkeeping for freelancers who hate spreadsheets and taxes",
+    goal: {
+      objective: "Acquire users",
+      target_metric: "signups",
+      target_value: "500",
+      timeframe: "60 days",
+      audience: "freelance designers and developers in the US",
+    },
+  };
+
+  it("builds queries that carry the audience and product, bounded in length", () => {
+    const queries = buildQueries(input);
+    expect(queries.length).toBe(3);
+    expect(queries[0]).toContain("freelance designers");
+    expect(queries.every((q) => q.split(/\s+/).length < 20)).toBe(true);
+  });
+
+  it("picks urls with dedupe, junk filtering, and a per-host cap that still allows subreddits", () => {
+    const r = (link: string) => ({ title: "t", link, snippet: "s" });
+    const picked = pickUrls([
+      r("https://www.reddit.com/r/freelance/"),
+      r("https://www.reddit.com/r/freelance/"), // exact dupe
+      r("https://www.reddit.com/r/web_design/"),
+      r("https://www.reddit.com/r/smallbusiness/"),
+      r("https://www.reddit.com/r/Entrepreneur/"), // 4th reddit — over per-host cap
+      r("https://www.pinterest.com/board/x"), // junk host
+      r("not a url"),
+      r("https://indiehackers.com/group/freelancers"),
+    ]);
+    expect(picked).toEqual([
+      "https://www.reddit.com/r/freelance/",
+      "https://www.reddit.com/r/web_design/",
+      "https://www.reddit.com/r/smallbusiness/",
+      "https://indiehackers.com/group/freelancers",
+    ]);
   });
 });
 

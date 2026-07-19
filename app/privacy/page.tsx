@@ -90,6 +90,12 @@ export default function PrivacyPage() {
             password reset). Receives your email address.
           </li>
           <li>
+            <strong>Serper</strong> and <strong>Firecrawl</strong> — power our self-hosted
+            channel research when enabled: Serper receives search queries derived from your
+            campaign goal and audience; Firecrawl fetches the public pages those searches
+            surface. Neither receives your account details.
+          </li>
+          <li>
             <strong>Vercel</strong> — application hosting. Processes standard request data (IP
             address, request logs) as part of serving the app.
           </li>

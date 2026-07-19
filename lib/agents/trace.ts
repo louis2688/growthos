@@ -79,6 +79,11 @@ export async function traced<T>(db: Db, ctx: TraceContext, fn: () => Promise<T>)
           input_tokens: usage.input_tokens,
           output_tokens: usage.output_tokens,
           web_search_requests: usage.web_search_requests,
+          // Runtime-decided models (the research facade) overwrite the static stamp with
+          // whichever pipeline actually served the run. Mixed rows (cheap attempt + Haiku
+          // fallback) label as the server — the free attempt's tokens then price at Haiku
+          // rates, overstating by well under a cent.
+          ...(usage.model ? { model: usage.model } : {}),
         })
         .eq("id", runId);
     } catch {

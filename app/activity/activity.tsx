@@ -184,10 +184,11 @@ export default function Activity({
                 <>
                   It excludes the {total.searches} web search
                   {total.searches === 1 ? "" : "es"} run by Channel Research and Launch Timing —
-                  those are billed per request, and GrowthOS has no rate for them to quote.{" "}
+                  billed per request by the search provider (Anthropic&apos;s web search, or our
+                  own search stack when enabled), with no rate for GrowthOS to quote.{" "}
                 </>
               )}
-              Your Anthropic Console is the source of truth for what you were actually charged.
+              The providers&apos; own consoles are the source of truth for actual charges.
             </p>
           </section>
 

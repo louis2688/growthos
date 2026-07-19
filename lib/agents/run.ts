@@ -21,6 +21,13 @@ export type AgentUsage = {
   input_tokens: number;
   output_tokens: number;
   web_search_requests: number;
+  /**
+   * Set by agents whose model is decided at RUNTIME (the research facade picks cheap-pipeline
+   * vs Haiku per run). traced() writes it over the static MODEL_BY_AGENT stamp, so the row
+   * prices by the model that actually served the run — otherwise free Cloudflare synthesis
+   * tokens would be billed at Haiku rates on the Activity page.
+   */
+  model?: string;
 };
 
 export function newUsage(): AgentUsage {
@@ -64,6 +71,12 @@ export function recordUsage(usage: {
   acc.input_tokens += usage.input_tokens;
   acc.output_tokens += usage.output_tokens;
   acc.web_search_requests += usage.server_tool_use?.web_search_requests ?? 0;
+}
+
+/** Stamps which model served this run; last writer wins, so a fallback relabels the row. */
+export function recordModel(model: string): void {
+  const acc = usageStore.getStore();
+  if (acc) acc.model = model;
 }
 
 /**
