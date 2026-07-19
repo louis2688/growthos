@@ -23,9 +23,27 @@ export type PostWriterInput = {
   todo: { title: string; description: string };
 };
 
+// Condensed from docs/marketing/reddit-guidelines.md (the mod-bot's removal rules), so a
+// generated Reddit post survives the same checks a human moderator would apply.
+const REDDIT_RULES = `
+Reddit-specific rules (this community removes posts that break these):
+- No direct pitch: don't sell, solicit signups, or ask for leads. Lead with insight; the product
+  gets one plain, disclosed mention at most, never a CTA-driven close.
+- Close with a genuine, conversational question that invites feedback or discussion (e.g. "anyone
+  else run into this?", "what's worked for you?") — this is encouraged, it's what earns comments.
+  Just don't dress it up as market research or a validation ask (see below).
+- Disclose affiliation up front if you built the product — undisclosed self-promotion gets removed.
+- No shortened, tracking, or affiliate-style links. Only a direct, transparent link.
+- No disguised research: don't frame the whole post as a survey, poll, or "validating an idea"
+  ask — a closing discussion question is fine, a post whose real purpose is data collection isn't.
+- No "free audit/review/roast my product" offers.
+- Must read as a genuine contribution — a real opinion, insight, or question, not templated or
+  AI-filler text.`;
+
 // Carries the disclosure and no-invented-numbers guardrails that evals/cases.ts exercises
 // through writePost — the eval is what proves this prompt still holds on the current backend.
 function buildPrompt(input: PostWriterInput): string {
+  const isReddit = input.channel.platform.toLowerCase() === "reddit";
   return `You are a growth copywriter. Write ONE post, ready to publish as-is.
 
 Product: ${input.productName}
@@ -54,7 +72,8 @@ Rules:
 - Concrete and specific about ideas, not invented numbers. No hype, no "game-changing".
 - Respect community norms: most communities punish undisclosed self-promotion. If the channel
   expects disclosure that you built it, disclose it plainly in the post.
-- Write the real thing, not a template. No "[insert X here]" placeholders.`;
+- Write the real thing, not a template. No "[insert X here]" placeholders.
+${isReddit ? REDDIT_RULES : ""}`;
 }
 
 export async function writePost(input: PostWriterInput): Promise<PostDraft> {
