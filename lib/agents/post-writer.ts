@@ -46,6 +46,7 @@ Reddit-specific rules (this community removes posts that break these):
 // through writePost — the eval is what proves this prompt still holds on the current backend.
 function buildPrompt(input: PostWriterInput): string {
   const isReddit = input.channel.platform.toLowerCase() === "reddit";
+  const isVideo = /youtube|tiktok/i.test(input.channel.platform);
   return `You are a growth copywriter. Write ONE post, ready to publish as-is.
 
 Product: ${input.productName}
@@ -61,7 +62,7 @@ Write in the native voice of ${input.channel.name}. Match what actually performs
 educational or value-first post for a community, a launch post for a directory, a
 build-in-public update for a founder audience. Infer the right register from the channel and
 the task above — do not use a generic marketing voice anywhere.
-${voiceSection(input.voice)}
+${isVideo ? "\nVideo channel: write the body as a ready-to-read script — a spoken hook in the first two lines, then short spoken beats. Camera or on-screen directions go in notes, not the body.\n" : ""}${voiceSection(input.voice)}
 Rules:
 - Lead with something useful to the reader. The product earns its mention by being relevant,
   never by being the point of the post.

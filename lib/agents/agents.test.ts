@@ -97,7 +97,8 @@ describe("cheap research pipeline (pure parts)", () => {
 
   it("builds queries that carry the audience and product, bounded in length", () => {
     const queries = buildQueries(input);
-    expect(queries.length).toBe(3);
+    expect(queries.length).toBe(4);
+    expect(queries.some((q) => q.includes("youtube") && q.includes("tiktok"))).toBe(true);
     expect(queries[0]).toContain("freelance designers");
     expect(queries.every((q) => q.split(/\s+/).length < 20)).toBe(true);
   });

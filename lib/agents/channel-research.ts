@@ -13,7 +13,7 @@ export const ChannelResearchSchema = z.object({
         platform: z.string().describe("Host platform, e.g. 'Reddit', 'Product Hunt', 'Independent'"),
         type: z
           .string()
-          .describe("community | directory | publication | influencer | platform | other"),
+          .describe("community | directory | publication | influencer | platform | partnership | other"),
         reason: z.string().describe("1-2 sentences: why this audience lives here"),
         confidence: z.enum(["high", "medium", "low"]),
       }),
@@ -39,8 +39,10 @@ Objective: ${input.goal.objective} — ${input.goal.target_value} ${input.goal.t
 Audience: ${input.goal.audience}
 
 Use web search to find and verify SPECIFIC, currently-active channels: named subreddits,
-named communities, directories, newsletters, publications, or influencer niches — not
-platform categories. "r/personalfinance" is a channel; "Reddit" is not.
+named communities, directories, newsletters, Medium publications, niche blogs, YouTube
+channels, TikTok creator niches, or potential partners — not platform categories.
+"r/personalfinance" is a channel; "Reddit" is not. A complementary product, newsletter, or
+creator that could co-promote gets type "partnership", with the angle in the reason.
 
 Return 6-10 channels. For each: where it is, what kind of place it is, why this exact
 audience is reachable there, and your confidence. Prefer channels you verified exist via
