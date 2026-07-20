@@ -171,6 +171,34 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
+            {/* Product Hunt featured badge — the one piece of hero social proof that is
+                externally verifiable, so it sits with the trust bullets, not the CTAs.
+                Two imgs, not one: the badge SVG bakes its colors in, so each theme needs
+                its own render. Keep the utm params — PH uses them to attribute the badge. */}
+            <a
+              href="https://www.producthunt.com/products/growthos-launchlift?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-growthos-launchlift-2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-block"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- external PH SVG; plain
+                  img avoids configuring a remote-image domain for a badge. */}
+              <img
+                alt="GrowthOS - LaunchLift on Product Hunt"
+                width={250}
+                height={54}
+                className="dark:hidden"
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1200913&theme=light&t=1784524499194"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element -- same as above */}
+              <img
+                alt="GrowthOS - LaunchLift on Product Hunt"
+                width={250}
+                height={54}
+                className="hidden dark:block"
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1200913&theme=dark&t=1784524499194"
+              />
+            </a>
           </div>
 
           {/* The interactive preview (roadmap #61): the real agents, rate-limited, no signup. */}
