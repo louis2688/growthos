@@ -9,6 +9,13 @@
  * First verdict (2026-07-20): Haiku won — better channel-type diversity, junk-free tails,
  * 4x faster. Cheap pipeline's tail was SEO-listicle blogs incl. one competitor. Iterate on
  * query templates before re-comparing.
+ *
+ * Second verdict (2026-07-21, after the 4-query + anti-listicle iteration): Haiku still
+ * wins. Cheap improved — YouTube/Medium/partnership channels now surface, listicle junk
+ * gone — but it timed out entirely on one of two inputs, returned three near-duplicate
+ * subreddits with copy-paste reasons on the other, and ran 3.5x slower. Next iteration:
+ * dedupe sibling subreddits, demand specific reasons, and add per-stage time budgets so a
+ * slow failure falls back fast instead of eating the run's deadline.
  */
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
