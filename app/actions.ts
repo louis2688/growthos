@@ -11,6 +11,9 @@ import { formatSeoRewrite, optimizeForSeo } from "@/lib/agents/seo-optimizer";
 import { composeEmailDigest, formatEmailDigest } from "@/lib/agents/email-digest";
 import { buildUtm, campaignSlug, formatUtm } from "@/lib/agents/utm-builder";
 import { formatTiming, recommendTiming } from "@/lib/agents/launch-timing";
+import { formatOutreach, writeOutreach } from "@/lib/agents/outreach-writer";
+import { formatCompetitorScan, scanCompetitors } from "@/lib/agents/competitor-scan";
+import { draftLaunchKit, formatLaunchKit } from "@/lib/agents/ph-launch-kit";
 import { formatImagePrompt } from "@/lib/agents/image-prompt";
 import {
   IMAGE_BUCKET,
@@ -678,9 +681,11 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
     return;
   }
 
-  // launch_timing is the other paid Anthropic web-search path; everything else runs on the
-  // Cloudflare pool.
-  const quotaErr = await userQuotaError(handler === "launch_timing" ? "search" : "agent");
+  // launch_timing and competitor_scan are the paid Anthropic web-search paths; everything
+  // else runs on the Cloudflare pool.
+  const quotaErr = await userQuotaError(
+    handler === "launch_timing" || handler === "competitor_scan" ? "search" : "agent",
+  );
   if (quotaErr) return { error: quotaErr };
   const charge = await chargeCredits(CREDIT_COSTS[handler]);
   if ("error" in charge) return { error: charge.error };
@@ -725,6 +730,17 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
                 todo: shared.todo,
               }),
             );
+
+          case "outreach_writer":
+            return formatOutreach(await writeOutreach({ ...shared, channel }));
+
+          case "competitor_scan":
+            return formatCompetitorScan(await scanCompetitors({ ...shared, channel }));
+
+          // Deliberately no channel: the kit is about the PH listing itself, which is the
+          // same whichever channel's plan this todo sits under.
+          case "ph_launch_kit":
+            return formatLaunchKit(await draftLaunchKit(shared));
 
           case "image_generator": {
             // Unlike every other handler, this produces a binary. Upload it here (inside the

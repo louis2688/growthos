@@ -20,6 +20,9 @@ const MODEL_BY_AGENT: Record<string, string> = {
   email_digest: CLOUDFLARE_TEXT_MODEL,
   utm_builder: CLOUDFLARE_TEXT_MODEL,
   image_generator: CLOUDFLARE_TEXT_MODEL, // the prompt writer runs on Cloudflare; FLUX render is free
+  outreach_writer: CLOUDFLARE_TEXT_MODEL,
+  competitor_scan: HAIKU,
+  ph_launch_kit: CLOUDFLARE_TEXT_MODEL,
 };
 
 export type TraceContext = {

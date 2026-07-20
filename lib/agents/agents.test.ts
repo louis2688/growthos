@@ -16,6 +16,9 @@ import {
   URL_PLACEHOLDER,
 } from "./utm-builder";
 import { LaunchTimingSchema, formatTiming } from "./launch-timing";
+import { OutreachDraftSchema, formatOutreach } from "./outreach-writer";
+import { CompetitorScanSchema, formatCompetitorScan } from "./competitor-scan";
+import { PhLaunchKitSchema, formatLaunchKit } from "./ph-launch-kit";
 
 describe("GoalAnalysisSchema", () => {
   const valid = {
@@ -423,5 +426,157 @@ describe("formatTiming", () => {
     });
     expect(out).toContain("Post: Tue 08:00 (US Eastern)");
     expect(out).toContain("GrowthOS doesn't publish anything");
+  });
+});
+
+describe("OutreachDraftSchema", () => {
+  const valid = {
+    who: "Freelancers active in r/freelance threads about invoicing pain",
+    subject: "Your invoicing thread",
+    message: "Saw [the thread where they mentioned this] — I built LedgerLite for exactly that.",
+    notes: "r/freelance tolerates DMs only after public interaction; reply in-thread first.",
+  };
+
+  it("accepts a valid draft", () => {
+    expect(OutreachDraftSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("accepts an empty subject — DMs on most platforms have none", () => {
+    expect(OutreachDraftSchema.safeParse({ ...valid, subject: "" }).success).toBe(true);
+  });
+
+  it("rejects a draft missing the message", () => {
+    const { message: _m, ...rest } = valid;
+    expect(OutreachDraftSchema.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe("formatOutreach", () => {
+  const draft = {
+    who: "W",
+    subject: "S",
+    message: "M with [their detail]",
+    notes: "N",
+  };
+
+  it("labels every section and keeps the one-at-a-time framing", () => {
+    const out = formatOutreach(draft);
+    expect(out).toContain("Who to contact: W");
+    expect(out).toContain("Subject: S");
+    expect(out).toContain("Before you send: N");
+    expect(out).toContain("one person at a time");
+    expect(out).toContain("GrowthOS doesn't send anything");
+  });
+
+  it("omits an empty subject and empty notes", () => {
+    const out = formatOutreach({ ...draft, subject: "", notes: "" });
+    expect(out).not.toContain("Subject:");
+    expect(out).not.toContain("Before you send:");
+  });
+});
+
+describe("CompetitorScanSchema", () => {
+  const valid = {
+    summary: "Two bookkeeping tools actively post in this subreddit.",
+    competitors: [
+      {
+        name: "BooksEasy",
+        what: "Bookkeeping for solo founders.",
+        presence: "Weekly value posts in r/freelance; launched on PH last month.",
+        source_url: "https://www.reddit.com/r/freelance/comments/abc",
+      },
+    ],
+    takeaways: ["Lead with tax-season pain, which neither competitor touches.", "Avoid launch-week overlap."],
+  };
+
+  it("accepts a valid scan", () => {
+    expect(CompetitorScanSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("accepts an empty competitor list — an honest quiet channel is a valid result", () => {
+    expect(CompetitorScanSchema.safeParse({ ...valid, competitors: [] }).success).toBe(true);
+  });
+
+  it("rejects a single takeaway", () => {
+    expect(CompetitorScanSchema.safeParse({ ...valid, takeaways: ["only one"] }).success).toBe(false);
+  });
+
+  it("rejects more than five competitors", () => {
+    const bad = { ...valid, competitors: Array.from({ length: 6 }, () => valid.competitors[0]) };
+    expect(CompetitorScanSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("formatCompetitorScan", () => {
+  const scan = {
+    summary: "Sum.",
+    competitors: [
+      { name: "A", what: "does a", presence: "posts weekly", source_url: "https://x.test/a" },
+      { name: "B", what: "does b", presence: "quiet here", source_url: "" },
+    ],
+    takeaways: ["t1", "t2"],
+  };
+
+  it("lists competitors with sources and says it is a snapshot, not monitoring", () => {
+    const out = formatCompetitorScan(scan);
+    expect(out).toContain("- A — does a");
+    expect(out).toContain("Seen at: https://x.test/a");
+    expect(out).toContain("What to do with this:");
+    expect(out).toContain("GrowthOS doesn't keep monitoring");
+  });
+
+  it("omits the source line when the model saw no URL", () => {
+    const out = formatCompetitorScan(scan);
+    const bLine = out.split("- B — does b")[1];
+    expect(bLine).not.toContain("Seen at:");
+  });
+
+  // Same failure mode formatTiming guards: a control character in a list header breaks the
+  // artifact's line structure.
+  it("strips control characters from the competitor header", () => {
+    const out = formatCompetitorScan({
+      ...scan,
+      competitors: [{ name: "A\rCo", what: "w", presence: "p", source_url: "" }],
+    });
+    expect(out).toContain("- A Co — w");
+  });
+});
+
+describe("PhLaunchKitSchema", () => {
+  const valid = {
+    tagline: "Bookkeeping that does itself",
+    listing: "LedgerLite reconciles freelance income automatically.",
+    maker_comment: "I built this because tax season broke me. What would make you trust it?",
+    checklist: ["Gallery images exported", "Launch at 12:01am PT", "Reply to every comment", "Share for feedback"],
+    notes: "Never ask for upvotes — PH flags vote solicitation.",
+  };
+
+  it("accepts a valid kit", () => {
+    expect(PhLaunchKitSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects a tagline over the hard cap", () => {
+    expect(PhLaunchKitSchema.safeParse({ ...valid, tagline: "x".repeat(81) }).success).toBe(false);
+  });
+
+  it("rejects a checklist that is too short to run a launch day", () => {
+    expect(PhLaunchKitSchema.safeParse({ ...valid, checklist: ["a", "b", "c"] }).success).toBe(false);
+  });
+});
+
+describe("formatLaunchKit", () => {
+  it("labels every asset and says the maker launches it themselves", () => {
+    const out = formatLaunchKit({
+      tagline: "T",
+      listing: "L",
+      maker_comment: "M",
+      checklist: ["a", "b", "c", "d"],
+      notes: "N",
+    });
+    expect(out).toContain("Tagline: T");
+    expect(out).toContain("Listing description:\nL");
+    expect(out).toContain("First maker comment:\nM");
+    expect(out).toContain("Launch day:");
+    expect(out).toContain("GrowthOS doesn't schedule or publish anything");
   });
 });

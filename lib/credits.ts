@@ -16,6 +16,9 @@ export const CREDIT_COSTS = {
   utm_builder: 0,
   launch_timing: 5,
   image_generator: 2,
+  outreach_writer: 1,
+  competitor_scan: 5, // the other live web-search path — priced like launch_timing
+  ph_launch_kit: 1,
 } as const satisfies Record<ToolHandler, number>;
 
 export const GENERATION_COST = 10; // channel research + plan generation, charged at confirmGoal

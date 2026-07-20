@@ -113,7 +113,10 @@ export type ToolHandler =
   | "email_digest"
   | "utm_builder"
   | "launch_timing"
-  | "image_generator";
+  | "image_generator"
+  | "outreach_writer"
+  | "competitor_scan"
+  | "ph_launch_kit";
 
 /** Global catalog row — not scoped to a campaign (domain-model-uml.html). */
 export type Tool = {
