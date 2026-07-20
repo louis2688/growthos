@@ -29,6 +29,7 @@ import type {
   Todo,
   Tool,
 } from "@/lib/types";
+import { goalSeed } from "@/lib/wizard";
 import { CampaignDanger } from "@/components/campaign-danger";
 import { AddTodoDialog, EditTodoDialog } from "./todo-dialogs";
 import { ToolRun } from "./tool-run";
@@ -90,13 +91,7 @@ export default function Dashboard({
     .filter((t) => t.status !== "done")
     .toSorted((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"))[0];
 
-  const goalLine = [
-    goal.objective,
-    goal.target_value && goal.target_metric ? `${goal.target_value} ${goal.target_metric}` : "",
-    goal.timeframe ? `in ${goal.timeframe}` : "",
-  ]
-    .filter(Boolean)
-    .join(" — ");
+  const goalLine = goalSeed(goal);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-12">
@@ -116,6 +111,13 @@ export default function Dashboard({
             className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             Board
+          </Link>
+          <Link
+            href={`/new?from=${campaign.id}`}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            title="Start a new campaign seeded with this one's product and goal"
+          >
+            New from this
           </Link>
           <AlertDialog>
             <AlertDialogTrigger

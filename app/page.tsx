@@ -2,7 +2,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient, currentUser } from "@/lib/supabase/server";
-import { stepPath } from "@/lib/wizard";
+import { goalSeed, stepPath } from "@/lib/wizard";
 import { wizardStep, type Campaign, type Channel, type Goal } from "@/lib/types";
 import { ArchivedCampaigns } from "./archived-campaigns";
 import Landing from "@/components/landing";
@@ -148,15 +148,7 @@ export default async function Home() {
         <div className="grid gap-4 sm:grid-cols-2">
           {active.map((c) => {
             const g = goalByCampaign.get(c.id);
-            const goalLine = g
-              ? [
-                  g.objective,
-                  g.target_value && g.target_metric ? `${g.target_value} ${g.target_metric}` : "",
-                  g.timeframe ? `in ${g.timeframe}` : "",
-                ]
-                  .filter(Boolean)
-                  .join(" — ")
-              : c.description;
+            const goalLine = g ? goalSeed(g) : c.description;
             const p = progress.get(c.id) ?? { done: 0, total: 0 };
             const pct = p.total === 0 ? 0 : Math.round((p.done / p.total) * 100);
             return (
