@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { withRetry } from "./run";
 import { generateStructured } from "./cloudflare";
+import { voiceSection, type BrandVoice } from "./brand-voice";
 
 export const OutreachDraftSchema = z.object({
   who: z
@@ -32,6 +33,7 @@ export type OutreachWriterInput = {
   channel: { name: string; platform: string; type: string };
   plan: { title: string; objective: string };
   todo: { title: string; description: string };
+  voice?: BrandVoice | null;
 };
 
 function buildPrompt(input: OutreachWriterInput): string {
@@ -45,7 +47,7 @@ Audience: ${input.goal.audience}
 Channel: ${input.channel.name} on ${input.channel.platform} (a ${input.channel.type} channel)
 Plan: ${input.plan.title} — ${input.plan.objective}
 This specific task: ${input.todo.title} — ${input.todo.description}
-
+${voiceSection(input.voice)}
 Rules:
 - This message will be sent to ONE person at a time, personalized first. It is not a broadcast.
   Write it so it only works personalized: leave at most two [square bracket] slots for details

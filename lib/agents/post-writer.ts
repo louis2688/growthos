@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { withRetry } from "./run";
 import { generateStructured } from "./cloudflare";
+import { voiceSection, type BrandVoice } from "./brand-voice";
 
 export const PostDraftSchema = z.object({
   title: z
@@ -21,6 +22,7 @@ export type PostWriterInput = {
   channel: { name: string; platform: string; type: string };
   plan: { title: string; objective: string };
   todo: { title: string; description: string };
+  voice?: BrandVoice | null;
 };
 
 // Condensed from docs/marketing/reddit-guidelines.md (the mod-bot's removal rules), so a
@@ -59,7 +61,7 @@ Write in the native voice of ${input.channel.name}. Match what actually performs
 educational or value-first post for a community, a launch post for a directory, a
 build-in-public update for a founder audience. Infer the right register from the channel and
 the task above — do not use a generic marketing voice anywhere.
-
+${voiceSection(input.voice)}
 Rules:
 - Lead with something useful to the reader. The product earns its mention by being relevant,
   never by being the point of the post.

@@ -19,6 +19,7 @@ import { LaunchTimingSchema, formatTiming } from "./launch-timing";
 import { OutreachDraftSchema, formatOutreach } from "./outreach-writer";
 import { CompetitorScanSchema, formatCompetitorScan } from "./competitor-scan";
 import { PhLaunchKitSchema, formatLaunchKit } from "./ph-launch-kit";
+import { brandVoiceFromMetadata, voiceSection } from "./brand-voice";
 
 describe("GoalAnalysisSchema", () => {
   const valid = {
@@ -578,5 +579,29 @@ describe("formatLaunchKit", () => {
     expect(out).toContain("First maker comment:\nM");
     expect(out).toContain("Launch day:");
     expect(out).toContain("GrowthOS doesn't schedule or publish anything");
+  });
+});
+
+describe("brand voice", () => {
+  it("returns null for absent, junk, or blank metadata", () => {
+    expect(brandVoiceFromMetadata(undefined)).toBeNull();
+    expect(brandVoiceFromMetadata({})).toBeNull();
+    expect(brandVoiceFromMetadata({ brand_voice: "nope" })).toBeNull();
+    expect(brandVoiceFromMetadata({ brand_voice: { tone: "   " } })).toBeNull();
+  });
+
+  it("extracts trimmed fields and tolerates partial shapes", () => {
+    expect(brandVoiceFromMetadata({ brand_voice: { tone: " dry wit " } })).toEqual({
+      tone: "dry wit",
+      bannedWords: "",
+    });
+  });
+
+  it("renders nothing without a voice and both lines with one", () => {
+    expect(voiceSection(null)).toBe("");
+    expect(voiceSection(undefined)).toBe("");
+    const section = voiceSection({ tone: "dry", bannedWords: "synergy, game-changing" });
+    expect(section).toContain("Tone: dry");
+    expect(section).toContain("Never use these words or phrases: synergy, game-changing");
   });
 });

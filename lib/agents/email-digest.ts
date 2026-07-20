@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { withRetry } from "./run";
 import { generateStructured } from "./cloudflare";
+import { voiceSection, type BrandVoice } from "./brand-voice";
 
 export const EmailDigestSchema = z.object({
   subject: z.string().describe("Subject line — specific, not a teaser"),
@@ -20,6 +21,7 @@ export type EmailDigestInput = {
   /** Only todos actually marked done — the campaign's real milestones. */
   milestones: { title: string; plan: string }[];
   progress: { done: number; total: number };
+  voice?: BrandVoice | null;
 };
 
 function buildPrompt(input: EmailDigestInput): string {
@@ -40,7 +42,7 @@ Work completed so far (${input.progress.done} of ${input.progress.total} tasks):
 ${milestones}
 
 Write the email from the completed work above and nothing else.
-
+${voiceSection(input.voice)}
 Rules:
 - The completed list is the ONLY factual record you have. Do not invent milestones, launch
   dates, user numbers, revenue, press coverage, or customer quotes. You do not know them.

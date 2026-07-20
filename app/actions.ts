@@ -15,6 +15,7 @@ import { formatOutreach, writeOutreach } from "@/lib/agents/outreach-writer";
 import { formatCompetitorScan, scanCompetitors } from "@/lib/agents/competitor-scan";
 import { draftLaunchKit, formatLaunchKit } from "@/lib/agents/ph-launch-kit";
 import { formatImagePrompt } from "@/lib/agents/image-prompt";
+import { brandVoiceFromMetadata } from "@/lib/agents/brand-voice";
 import {
   IMAGE_BUCKET,
   generateImage,
@@ -638,12 +639,14 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
   if (!todo) return { error: "Todo not found." };
   if (!todo.tool_id) return { error: "This todo has no tool assigned." };
 
-  const [{ data: tool }, { data: plan }, { data: campaign }, { data: goal }] = await Promise.all([
-    db.from("tools").select("*").eq("id", todo.tool_id).single(),
-    db.from("plans").select("id, title, objective, channel_id").eq("id", todo.plan_id).single(),
-    db.from("campaigns").select("name, description").eq("id", todo.campaign_id).single(),
-    db.from("goals").select("objective, audience").eq("campaign_id", todo.campaign_id).single(),
-  ]);
+  const [{ data: tool }, { data: plan }, { data: campaign }, { data: goal }, { data: auth }] =
+    await Promise.all([
+      db.from("tools").select("*").eq("id", todo.tool_id).single(),
+      db.from("plans").select("id, title, objective, channel_id").eq("id", todo.plan_id).single(),
+      db.from("campaigns").select("name, description").eq("id", todo.campaign_id).single(),
+      db.from("goals").select("objective, audience").eq("campaign_id", todo.campaign_id).single(),
+      db.auth.getUser(),
+    ]);
   if (!tool || !plan || !campaign || !goal) return { error: "Campaign data is incomplete." };
   if (!(tool as Tool).handler) {
     return { error: `${(tool as Tool).name} can't be run yet — it's catalog-only for now.` };
@@ -697,6 +700,8 @@ export async function runTodoTool(todoId: string): Promise<{ error: string } | u
       goal: { objective: goal.objective, audience: goal.audience },
       plan: { title: plan.title, objective: plan.objective },
       todo: { title: todo.title, description: todo.description },
+      // Rendered by the copy writers (post, seo, email, outreach); other handlers ignore it.
+      voice: brandVoiceFromMetadata(auth.user?.user_metadata),
     };
 
     // One trace per tool run, keyed by handler, carrying the todo so a failure is traceable

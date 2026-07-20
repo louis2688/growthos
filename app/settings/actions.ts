@@ -47,6 +47,29 @@ export async function changePassword(
   return { ok: true };
 }
 
+export async function updateBrandVoice(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const tone = String(formData.get("tone") ?? "").trim();
+  const bannedWords = String(formData.get("banned_words") ?? "").trim();
+  if (tone.length > 500 || bannedWords.length > 500) {
+    return { error: "Keep each field under 500 characters." };
+  }
+
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/login");
+
+  // Stored on user_metadata like the display name — see lib/agents/brand-voice.ts for why.
+  // Both fields empty clears the preset, so the copy writers get no voice section at all.
+  const { error } = await supabase.auth.updateUser({
+    data: { brand_voice: tone || bannedWords ? { tone, banned_words: bannedWords } : null },
+  });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
 export async function deleteAccount(): Promise<{ error: string } | undefined> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();

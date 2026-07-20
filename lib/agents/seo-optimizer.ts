@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { withRetry } from "./run";
 import { generateStructured } from "./cloudflare";
+import { voiceSection, type BrandVoice } from "./brand-voice";
 
 export const SeoRewriteSchema = z.object({
   keywords: z
@@ -22,6 +23,7 @@ export type SeoOptimizerInput = {
   channel: { name: string; platform: string; type: string };
   plan: { title: string; objective: string };
   todo: { title: string; description: string };
+  voice?: BrandVoice | null;
 };
 
 function buildPrompt(input: SeoOptimizerInput): string {
@@ -37,7 +39,7 @@ Plan: ${input.plan.title} — ${input.plan.objective}
 This specific task: ${input.todo.title} — ${input.todo.description}
 
 Choose the target keywords, then write the copy around them.
-
+${voiceSection(input.voice)}
 Rules:
 - Choose keywords this audience would really search. No stuffing: if a keyword can't sit in a
   sentence a human would say, leave it out and say so in your notes.
