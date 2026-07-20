@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next";
 import AppShell from "@/components/app-shell";
@@ -66,6 +67,15 @@ export default async function RootLayout({
     >
       {/* pb-9 reserves room for the fixed SiteFooter so page content never hides behind it. */}
       <body className="min-h-full flex flex-col pb-9">
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-JVP9CH2671" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-JVP9CH2671');
+          `}
+        </Script>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AppShell user={shellUser}>{children}</AppShell>
           <SiteFooter />
