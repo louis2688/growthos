@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { consumeResetQuota } from "@/lib/rate-limit";
+import { CAPTCHA_FIELD, humanizeAuthError } from "@/lib/auth-errors";
 
 export type AuthState = { error: string; email: string; name: string } | { sent: string } | null;
 
@@ -15,6 +16,10 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const mode = String(formData.get("mode") ?? "signin");
   if (!email || !password) return { error: "Enter your email and password.", email, name };
 
+  // Undefined rather than "" when the widget isn't configured: Supabase rejects an empty
+  // token outright, so passing one would break auth wherever no site key is deployed.
+  const captchaToken = String(formData.get(CAPTCHA_FIELD) ?? "") || undefined;
+
   const supabase = await createClient();
   const { error } =
     mode === "signup"
@@ -23,11 +28,11 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
         await supabase.auth.signUp({
           email,
           password,
-          options: name ? { data: { full_name: name } } : undefined,
+          options: { captchaToken, ...(name ? { data: { full_name: name } } : {}) },
         })
-      : await supabase.auth.signInWithPassword({ email, password });
+      : await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } });
 
-  if (error) return { error: error.message, email, name };
+  if (error) return { error: humanizeAuthError(error.message), email, name };
 
   // Supabase requires email confirmation on sign-up unless disabled in project settings.
   if (mode === "signup") {
@@ -76,6 +81,7 @@ export async function requestPasswordReset(
   // and forwards to the update-password form.
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/login/reset`,
+    captchaToken: String(formData.get(CAPTCHA_FIELD) ?? "") || undefined,
   });
 
   // Rate limiting is worth surfacing honestly; any other outcome gets the same "sent" message

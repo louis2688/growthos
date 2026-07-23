@@ -6,6 +6,7 @@ import { signIn, signInWithGoogle, type AuthState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Turnstile from "@/components/turnstile";
 
 export default function LoginForm({
   initialMode = "signin",
@@ -91,6 +92,8 @@ export default function LoginForm({
             </div>
 
             {values?.error && <p className="text-sm text-destructive">{values.error}</p>}
+
+            <Turnstile resetOn={values?.error} />
 
             <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "One moment…" : signup ? "Create account" : "Log in"}

@@ -6,6 +6,7 @@ import { requestPasswordReset, type ResetRequestState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Turnstile from "@/components/turnstile";
 
 export default function ForgotForm() {
   const [state, formAction, pending] = useActionState<ResetRequestState, FormData>(
@@ -48,6 +49,8 @@ export default function ForgotForm() {
               {values.error}
             </p>
           )}
+
+          <Turnstile resetOn={values?.error} />
 
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "One moment…" : "Send reset link"}
