@@ -1,3 +1,4 @@
+import "server-only";
 import { recordModel, recordUsage, withRetry } from "./run";
 import { CLOUDFLARE_TEXT_MODEL, generateStructured } from "./cloudflare";
 import {
