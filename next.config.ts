@@ -5,6 +5,7 @@ import type { NextConfig } from "next";
 // - Turnstile        script + iframe + worker: challenges.cloudflare.com
 // - Supabase         REST/auth/storage/realtime: *.supabase.co (+ wss)   storage images: *.supabase.co
 // - Product Hunt      featured badge image: api.producthunt.com
+// - ChatNode          embed script + session POST + widget iframe: www.chatnode.app
 // Fonts are self-hosted by next/font/google, so no external font host is needed.
 const isProd = process.env.NODE_ENV === "production";
 
@@ -16,13 +17,13 @@ const isProd = process.env.NODE_ENV === "production";
 // is prod-only or it would force the http://localhost dev server to https and break the preview.
 const csp = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline' ${isProd ? "" : "'unsafe-eval'"} https://www.googletagmanager.com https://challenges.cloudflare.com`,
+  `script-src 'self' 'unsafe-inline' ${isProd ? "" : "'unsafe-eval'"} https://www.googletagmanager.com https://challenges.cloudflare.com https://www.chatnode.app`,
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: blob: https://*.supabase.co https://api.producthunt.com https://www.googletagmanager.com https://www.google-analytics.com`,
   `font-src 'self' data:`,
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com ${isProd ? "" : "ws://localhost:* http://localhost:*"}`,
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://www.chatnode.app ${isProd ? "" : "ws://localhost:* http://localhost:*"}`,
   `worker-src 'self' blob:`,
-  `frame-src https://challenges.cloudflare.com`,
+  `frame-src https://challenges.cloudflare.com https://www.chatnode.app`,
   `frame-ancestors 'none'`,
   `object-src 'none'`,
   `base-uri 'self'`,

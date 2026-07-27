@@ -83,6 +83,23 @@ export default async function RootLayout({
               flows once Web Analytics is enabled on the Vercel project. */}
           <Analytics />
         </ThemeProvider>
+        {/* Chatnode support widget. Plain <script>, not next/script, so it lands in the SSR
+            HTML and document.currentScript is set when it runs — the loader reads its own
+            data-* attributes off that. Behaviour (webhook, welcome text, lead capture) lives
+            on the bot in the Chatnode dashboard; these attributes only style the launcher.
+            www.launchlift.app, launchlift.app and localhost:3000 must all be on that bot's
+            allowed-domains list — an empty list denies everything, it is not a wildcard. */}
+        <script
+          src="https://www.chatnode.app/embed.js"
+          data-bot="a2057f68-da15-4935-928e-0cc7089e863f"
+          data-color="#0064e0"
+          data-position="bottom-right"
+          data-width="400"
+          data-height="640"
+          data-button-text="Ask GrowthOS"
+          data-greeting="Stuck on a campaign? Ask me."
+          defer
+        />
       </body>
     </html>
   );
