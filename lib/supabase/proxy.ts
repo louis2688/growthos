@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/robots.txt",
   "/sitemap.xml",
   "/llms.txt",
+  "/api/keepalive",
 ];
 
 export async function updateSession(request: NextRequest) {
